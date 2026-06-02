@@ -312,7 +312,6 @@ if "quiz_started" not in st.session_state:
     st.session_state.user_choice = None
     st.session_state.auto_advance_flash = False
     st.session_state.review_wrong_indices = []
-    # shuffle: თითოეული კითხვისთვის ვარიანტების გადარევის რუქა
     st.session_state.option_order_map = {}
     st.session_state.stats_saved = False
     st.session_state.show_stats = False
@@ -332,7 +331,7 @@ if not st.session_state.quiz_started:
         ">
             <div style="font-size: 36px; margin-bottom: 10px;">🧬</div>
             <div style="font-size: 22px; font-weight: 700; color: #ffffff; font-family: 'Noto Sans Georgian', sans-serif; margin-bottom: 6px;">
-                სამედიცინო ტესტები
+                🧬 სამედიცინო ტესტები
             </div>
             <div style="font-size: 14px; color: rgba(255,255,255,0.75); font-family: 'Noto Sans Georgian', sans-serif;">
                 ბაზაში სულ <strong style="color:#fff">{total}</strong> კითხვა
@@ -461,7 +460,6 @@ if not st.session_state.quiz_started:
 active_indices = st.session_state.active_indices
 current_idx = st.session_state.current_idx
 
-# გარანტია: ეს ცვლადები ყოველთვის არსებობს (review-შიც)
 if "option_order_map" not in st.session_state:
     st.session_state.option_order_map = {}
 if "stats_saved" not in st.session_state:
@@ -479,7 +477,7 @@ if current_idx < len(active_indices):
     real_idx = active_indices[current_idx]
     q_data = quiz_data[real_idx]
 
-    # ვარიანტების shuffle — ერთხელ გენერირდება კითხვაზე და ინახება
+    # ვარიანტების shuffle — ერთხელ გენერირდება კითხვაზე და ინახება ორიგინალი ინდექსები
     shuffle_on = st.session_state.shuffle_on
     if current_idx not in st.session_state.option_order_map:
         order = list(range(len(q_data["options"])))
@@ -488,9 +486,23 @@ if current_idx < len(active_indices):
         st.session_state.option_order_map[current_idx] = order
     option_order = st.session_state.option_order_map[current_idx]
 
-    # shuffle-ის გათვალისწინებით: სწორი პასუხის ახალი ინდექსი
-    original_correct = q_data["correct_answer"]
-    shuffled_correct_idx = option_order.index(original_correct)
+    # ——— 🛠️ შეცდომის (ValueError) დაცვის და ოპტიმიზაციის ბლოკი 🛠️ ———
+    original_correct_clean = str(q_data["correct_answer"]).strip()
+    options_clean = [str(opt).strip() for opt in q_data["options"]]
+    
+    try:
+        # 1. ჯერ ვპოულობთ სწორი პასუხის ინდექსს ორიგინალ გასუფთავებულ მასივში
+        orig_correct_idx = options_clean.index(original_correct_clean)
+        # 2. შემდეგ ვპოულობთ მის ახალ პოზიციას არეულ (shuffled) ინდექსების მასივში
+        shuffled_correct_idx = option_order.index(orig_correct_idx)
+    except ValueError:
+        # ფოლბექი: თუ ტექსტი იდეალურად მაინც ვერ დაემთხვა, ვეძებთ ნაწილობრივი დამთხვევით
+        orig_correct_idx = 0
+        for i, opt in enumerate(options_clean):
+            if original_correct_clean in opt or opt in original_correct_clean:
+                orig_correct_idx = i
+                break
+        shuffled_correct_idx = option_order.index(orig_correct_idx) if orig_correct_idx < len(option_order) else 0
 
     if st.session_state.review_mode:
         mode_txt = f" · გადახედვა #{st.session_state.review_round}"
@@ -509,9 +521,9 @@ if current_idx < len(active_indices):
     st.write("")
 
     options = q_data["options"]
-    correct_idx = shuffled_correct_idx  # shuffle-ის შემდეგ სწორის პოზიცია
+    correct_idx = shuffled_correct_idx  # გადარეული ვარიანტების ახალი სწორი ინდექსი
 
-    # ფერების ოვერრაიდი პასუხის შემდეგ
+    # ფერების შეცვლა პასუხის გაცემის შემდეგ
     if st.session_state.has_responded:
         correct_child = correct_idx + 1
         chosen_child = st.session_state.user_choice + 1
@@ -527,6 +539,7 @@ if current_idx < len(active_indices):
         """
         if st.session_state.user_choice != correct_idx:
             color_override += f"""
+            <style>
             div[data-testid="stVerticalBlock"] > div:nth-child({chosen_child}) button[kind="secondary"]:disabled {{
                 background: #fff2f2 !important;
                 border-color: #ef4444 !important;
@@ -542,7 +555,7 @@ if current_idx < len(active_indices):
     with options_block:
         for display_idx, original_idx in enumerate(option_order):
             letter = letters[display_idx] if display_idx < len(letters) else str(display_idx + 1)
-            label = f"**{letter})**  {options[original_idx]}"
+            label = f"**{letter})** {options[original_idx]}"
             if st.button(label, key=f"opt_{current_idx}_{display_idx}",
                          disabled=st.session_state.has_responded,
                          use_container_width=True):
@@ -563,7 +576,7 @@ if current_idx < len(active_indices):
                             st.session_state.review_wrong_indices.append(real_idx)
                 st.rerun()
 
-    # სწორ პასუხზე: ღილაკები render-ია (მწვანე ჩანს), ვიცდით, შემდეგ გადადის
+    # სწორ პასუხზე ავტომატური გადასვლა მცირე დაყოვნებით
     if st.session_state.auto_advance_flash:
         time.sleep(1.2)
         st.session_state.current_idx += 1
@@ -572,7 +585,7 @@ if current_idx < len(active_indices):
         st.session_state.auto_advance_flash = False
         st.rerun()
 
-    # განმარტება — ჩანს მხოლოდ შეცდომაზე
+    # სამედიცინო განმარტების ჩვენება შეცდომის შემთხვევაში
     if st.session_state.has_responded and not st.session_state.auto_advance_flash:
         st.markdown(f"""
             <div class="explanation-wrap">
