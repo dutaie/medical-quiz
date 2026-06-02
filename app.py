@@ -22,9 +22,8 @@ st.markdown("""
         max-width: 680px !important;
     }
 
-    /* კითხვის ველის (st.info) სტილის იძულებითი შესწორება */
     div[data-testid="stAlert"][kind="info"] * {
-        color: #000000 !important; /* ტექსტი შავი იქნება */
+        color: #000000 !important;
         font-weight: 500 !important;
         font-size: 18px !important;
         line-height: 1.6 !important;
@@ -72,14 +71,6 @@ st.markdown("""
         white-space: normal !important;
         box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
         transition: border-color 0.15s, background 0.15s !important;
-    }
-
-    div.stButton > button[kind="secondary"] div[data-testid="stMarkdownContainer"] p {
-        text-align: left !important;
-        width: 100% !important;
-        margin: 0 !important;
-        font-size: 16px !important;
-        line-height: 1.55 !important;
     }
 
     div.stButton > button[kind="secondary"]:hover {
@@ -132,98 +123,6 @@ st.markdown("""
         box-shadow: 0 2px 8px rgba(42,107,205,0.25) !important;
         transition: background 0.15s !important;
     }
-    div.stButton > button[kind="primary"]:hover {
-        background: #1d56b0 !important;
-    }
-
-    div[data-testid="stMetric"] {
-        background: #f4f7ff !important;
-        border-radius: 14px !important;
-        padding: 16px !important;
-        border: 1px solid #dde3f0 !important;
-        text-align: center !important;
-    }
-    div[data-testid="stMetricLabel"] p {
-        font-size: 13px !important;
-        font-family: 'Noto Sans Georgian', sans-serif !important;
-        color: #5a6a85 !important;
-        text-align: center !important;
-    }
-    div[data-testid="stMetricValue"] {
-        font-size: 26px !important;
-        font-weight: 700 !important;
-        color: #1a2845 !important;
-        text-align: center !important;
-    }
-
-    input[type="number"] {
-        font-family: 'Noto Sans Georgian', sans-serif !important;
-        font-size: 16px !important;
-        border-radius: 10px !important;
-    }
-
-    h3 {
-        font-family: 'Noto Sans Georgian', sans-serif !important;
-        font-size: 18px !important;
-        font-weight: 600 !important;
-        color: #1a2845 !important;
-        margin-bottom: 4px !important;
-    }
-
-    .error-block {
-        background: #fff2f2;
-        border-left: 4px solid #e53935;
-        border-radius: 12px;
-        padding: 16px 18px;
-        margin-bottom: 16px;
-    }
-    .error-block p {
-        font-size: 15px;
-        font-weight: 600;
-        color: #991b1b;
-        margin: 0;
-        font-family: 'Noto Sans Georgian', sans-serif;
-        line-height: 1.55;
-    }
-
-    .stat-card {
-        background: #f7f9fc;
-        border-radius: 14px;
-        border: 1.5px solid #dde3f0;
-        padding: 16px 18px;
-        margin-bottom: 10px;
-    }
-    .stat-card-title {
-        font-size: 12px;
-        font-weight: 700;
-        letter-spacing: 0.07em;
-        text-transform: uppercase;
-        color: #8a93a6;
-        margin-bottom: 10px;
-        font-family: 'Noto Sans Georgian', sans-serif;
-    }
-    .stat-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px 0;
-        border-bottom: 1px solid #eef0f5;
-        font-family: 'Noto Sans Georgian', sans-serif;
-    }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-row-label { font-size: 14px; color: #3a4a65; }
-    .stat-row-value { font-size: 14px; font-weight: 600; color: #1a2845; }
-    .weak-q-badge {
-        display: inline-block;
-        background: #fff2f2;
-        color: #b91c1c;
-        border-radius: 6px;
-        padding: 2px 8px;
-        font-size: 13px;
-        font-weight: 600;
-        margin: 2px 3px;
-        font-family: 'Noto Sans Georgian', sans-serif;
-    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -275,11 +174,11 @@ def load_quiz_data():
 quiz_data = load_quiz_data()
 
 if not quiz_data:
-    st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
+    st.error("ვერ მოიძებნა 'questions.json' ფაილი!")
     st.stop()
 
 
-# ——— session_state ინიციალიზაცია ———
+# ——— session_state ———
 if "quiz_started" not in st.session_state:
     st.session_state.quiz_started = False
     st.session_state.current_idx = 0
@@ -295,94 +194,39 @@ if "quiz_started" not in st.session_state:
     st.session_state.review_wrong_indices = []
     st.session_state.option_order_map = {}
     st.session_state.stats_saved = False
-    st.session_state.show_stats = False
 
 
 # ——— საწყისი ეკრანი ———
 if not st.session_state.quiz_started:
     total_questions = len(quiz_data)
-
-    st.markdown("""
-        <div style="
-            background: linear-gradient(135deg, #1a2845 0%, #2a6bcd 100%);
-            border-radius: 18px;
-            padding: 28px 24px;
-            margin-bottom: 24px;
-            text-align: center;
-        ">
+    st.markdown(f"""
+        <div style="background: linear-gradient(135deg, #1a2845 0%, #2a6bcd 100%); border-radius: 18px; padding: 28px 24px; margin-bottom: 24px; text-align: center;">
             <div style="font-size: 36px; margin-bottom: 10px;">🧬</div>
-            <div style="font-size: 22px; font-weight: 700; color: #ffffff; font-family: 'Noto Sans Georgian', sans-serif; margin-bottom: 6px;">
-                სამედიცინო ტესტები
-            </div>
-            <div style="font-size: 14px; color: rgba(255,255,255,0.75); font-family: 'Noto Sans Georgian', sans-serif;">
-                ბაზაში სულ <strong style="color:#fff">{total}</strong> კითხვა
-            </div>
+            <div style="font-size: 22px; font-weight: 700; color: #ffffff; font-family: 'Noto Sans Georgian', sans-serif; margin-bottom: 6px;">სამედიცინო ტესტები</div>
+            <div style="font-size: 14px; color: rgba(255,255,255,0.75); font-family: 'Noto Sans Georgian', sans-serif;">ბაზაში სულ {total_questions} კითხვა</div>
         </div>
-    """.replace("{total}", str(total_questions)), unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
     tab1, tab2 = st.tabs(["📝 ტესტი", "📊 სტატისტიკა"])
-
     with tab1:
-        st.write("### ⚙️ კითხვების დიაპაზონი")
-        col1, col2 = st.columns(2)
-        with col1:
-            start_q = st.number_input("საიდან:", min_value=1, max_value=total_questions, value=1, step=1)
-        with col2:
-            end_q = st.number_input("სად მდე:", min_value=1, max_value=total_questions, value=min(20, total_questions), step=1)
-
+        start_q = st.number_input("საიდან:", min_value=1, max_value=total_questions, value=1, step=1)
+        end_q = st.number_input("სად მდე:", min_value=1, max_value=total_questions, value=min(20, total_questions), step=1)
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
-
-        if start_q > end_q:
-            st.markdown('<p style="color:#dc2626; font-weight:600; font-size:14px; margin-top:6px;">⚠️ საწყისი კითხვა საბოლოოზე მეტია!</p>', unsafe_allow_html=True)
-        else:
-            q_count = end_q - start_q + 1
-            st.markdown(f'<p style="color:#5a6a85; font-size:14px; margin: 8px 0 16px;">შეირჩა <strong style="color:#2a6bcd">{q_count}</strong> კითხვა</p>', unsafe_allow_html=True)
-            if st.button("🚀 ტესტირების დაწყება", type="primary", use_container_width=True):
-                indices = list(range(start_q - 1, end_q))
-                if shuffle_on:
-                    random.shuffle(indices)
-                st.session_state.active_indices = indices
-                st.session_state.shuffle_on = shuffle_on
-                st.session_state.quiz_started = True
-                st.session_state.stats_saved = False
-                st.rerun()
+        if st.button("🚀 ტესტირების დაწყება", type="primary", use_container_width=True):
+            indices = list(range(start_q - 1, end_q))
+            if shuffle_on: random.shuffle(indices)
+            st.session_state.active_indices = indices
+            st.session_state.shuffle_on = shuffle_on
+            st.session_state.quiz_started = True
+            st.rerun()
 
     with tab2:
         stats = load_stats()
-        sessions = stats["sessions"]
-        q_wrong = stats["question_wrong_counts"]
-
-        if not sessions:
-            st.markdown('<div style="text-align:center; padding: 32px 0; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif; font-size:15px;">🗂️ სტატისტიკა ჯერ არ გაქვთ.<br>პირველი ტესტის შემდეგ გამოჩნდება.</div>', unsafe_allow_html=True)
+        if not stats["sessions"]:
+            st.write("სტატისტიკა ჯერ არ არის.")
         else:
-            all_scores = [s["score"] for s in sessions]
-            all_total = sum(s["total"] for s in sessions)
-            avg_score = sum(all_scores) / len(all_scores)
-            best_score = max(all_scores)
-
-            st.markdown(f"""
-                <div class="stat-card">
-                    <div class="stat-card-title">ზოგადი მაჩვენებლები</div>
-                    <div class="stat-row"><span class="stat-row-label">სულ ტესტი ჩატარდა</span><span class="stat-row-value">{len(sessions)}</span></div>
-                    <div class="stat-row"><span class="stat-row-label">სულ კითხვა გაიარა</span><span class="stat-row-value">{all_total}</span></div>
-                    <div class="stat-row"><span class="stat-row-label">საშუალო შედეგი</span><span class="stat-row-value">{avg_score:.1f}%</span></div>
-                    <div class="stat-row"><span class="stat-row-label">საუკეთესო შედეგი</span><span class="stat-row-value">🏆 {best_score:.1f}%</span></div>
-                </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown('<div class="stat-card"><div class="stat-card-title">ბოლო სესიები</div>', unsafe_allow_html=True)
-            for s in reversed(sessions[-5:]):
-                color = "#15803d" if s["score"] >= 80 else ("#92400e" if s["score"] >= 60 else "#b91c1c")
-                st.markdown(f'<div class="stat-row"><span class="stat-row-label">{s["date"]} &nbsp;·&nbsp; {s["total"]} კითხვა</span><span class="stat-row-value" style="color:{color};">{s["score"]}%</span></div>', unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
-
-            if q_wrong:
-                sorted_wrong = sorted(q_wrong.items(), key=lambda x: x[1], reverse=True)[:10]
-                badges = "".join([f'<span class="weak-q-badge">#{qn} ({cnt}✗)</span>' for qn, cnt in sorted_wrong])
-                st.markdown(f'<div class="stat-card"><div class="stat-card-title">ყველაზე ხშირი შეცდომები</div><div style="padding: 6px 0; line-height: 2.2;">{badges}</div></div>', unsafe_allow_html=True)
-
-            st.write("")
-            if st.button("🗑️ სტატისტიკის გასუფთავება", use_container_width=True):
+            st.write(f"სულ ჩატარდა: {len(stats['sessions'])} ტესტი")
+            if st.button("🗑️ გაწმენდა"):
                 clear_stats()
                 st.rerun()
     st.stop()
@@ -395,116 +239,67 @@ current_idx = st.session_state.current_idx
 if current_idx < len(active_indices):
     real_idx = active_indices[current_idx]
     q_data = quiz_data[real_idx]
-
-    question_text = q_data.get("question", f"⚠️ შეცდომა: კითხვის ტექსტი ცარიელია (ბაზა #{real_idx + 1})")
+    question_text = q_data.get("question", "...")
     options = q_data.get("options", [])
     correct_answer_raw = q_data.get("correct_answer", None)
-    explanation_text = q_data.get("explanation", "განმარტება არ არის მითითებული.")
+    explanation_text = q_data.get("explanation", "განმარტება არ არის.")
 
-    if not options or correct_answer_raw is None:
-        st.error(f"❌ ბაზის #{real_idx + 1} კითხვა დაზიანებულია!")
-        if st.button("გამოტოვება", use_container_width=True):
-            st.session_state.current_idx += 1
-            st.rerun()
-        st.stop()
-
-    shuffle_on = st.session_state.shuffle_on
+    # პროგრეს ბარი
+    st.progress((current_idx + 1) / len(active_indices))
+    st.write("")
+    st.info(question_text)
+    
+    # ლოგიკა
     if current_idx not in st.session_state.option_order_map:
         order = list(range(len(options)))
-        if shuffle_on:
-            random.shuffle(order)
+        if st.session_state.shuffle_on: random.shuffle(order)
         st.session_state.option_order_map[current_idx] = order
     option_order = st.session_state.option_order_map[current_idx]
 
-    original_correct_clean = str(correct_answer_raw).strip()
-    options_clean = [str(opt).strip() for opt in options]
+    # პასუხების შემოწმება
+    correct_idx = -1
+    for i, opt in enumerate(options):
+        if str(opt).strip() == str(correct_answer_raw).strip():
+            correct_idx = i
+            break
     
-    try:
-        orig_correct_idx = options_clean.index(original_correct_clean)
-        shuffled_correct_idx = option_order.index(orig_correct_idx)
-    except ValueError:
-        orig_correct_idx = 0
-        shuffled_correct_idx = 0
+    # გაშიფრული სწორი პასუხის პოზიცია
+    shuffled_correct_idx = -1
+    for i, orig_idx in enumerate(option_order):
+        if orig_idx == correct_idx:
+            shuffled_correct_idx = i
+            break
 
-    st.markdown(f'<p style="font-size:13px; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif; margin-bottom:6px;">კითხვა {current_idx + 1} / {len(active_indices)}</p>', unsafe_allow_html=True)
-    st.progress((current_idx + 1) / len(active_indices))
-    st.write("")
-
-    st.info(question_text)
-    st.write("")
-
-    correct_idx = shuffled_correct_idx
-
-    if st.session_state.has_responded:
-        correct_child = correct_idx + 1
-        chosen_child = st.session_state.user_choice + 1
-        color_override = f"""
-        <style>
-        div[data-testid="stVerticalBlock"] > div:nth-child({correct_child}) button[kind="secondary"]:disabled {{
-            background: #f0fdf4 !important; border-color: #22c55e !important; color: #15803d !important; font-weight: 600 !important;
-        }}
-        """
-        if st.session_state.user_choice != correct_idx:
-            color_override += f"""
-            div[data-testid="stVerticalBlock"] > div:nth-child({chosen_child}) button[kind="secondary"]:disabled {{
-                background: #fff2f2 !important; border-color: #ef4444 !important; color: #b91c1c !important; font-weight: 600 !important;
-            }}
-            """
-        color_override += "</style>"
-        st.markdown(color_override, unsafe_allow_html=True)
-
-    letters = ["ა", "ბ", "გ", "დ", "ე", "ვ"]
+    # ღილაკები
     for display_idx, original_idx in enumerate(option_order):
-        if display_idx < len(options):
-            letter = letters[display_idx] if display_idx < len(letters) else str(display_idx + 1)
-            label = f"**{letter})** {options[original_idx]}"
-            if st.button(label, key=f"opt_{current_idx}_{display_idx}", disabled=st.session_state.has_responded, use_container_width=True):
-                st.session_state.has_responded = True
-                st.session_state.user_choice = display_idx
+        if st.button(options[original_idx], key=f"btn_{display_idx}", disabled=st.session_state.has_responded, use_container_width=True):
+            st.session_state.has_responded = True
+            st.session_state.user_choice = display_idx
+            
+            if display_idx == shuffled_correct_idx:
+                if not st.session_state.review_mode: st.session_state.correct_count += 1
+            else:
+                if not st.session_state.review_mode: st.session_state.wrong_count += 1
+                if real_idx not in st.session_state.wrong_indices: st.session_state.wrong_indices.append(real_idx)
+            st.rerun()
 
-                if display_idx == correct_idx:
-                    if not st.session_state.review_mode:
-                        st.session_state.correct_count += 1
-                    st.session_state.auto_advance_flash = True
-                else:
-                    if not st.session_state.review_mode:
-                        st.session_state.wrong_count += 1
-                        if real_idx not in st.session_state.wrong_indices:
-                            st.session_state.wrong_indices.append(real_idx)
-                    else:
-                        if real_idx not in st.session_state.review_wrong_indices:
-                            st.session_state.review_wrong_indices.append(real_idx)
-                st.rerun()
-
-    if st.session_state.auto_advance_flash:
-        time.sleep(1.2)
-        st.session_state.current_idx += 1
-        st.session_state.has_responded = False
-        st.session_state.user_choice = None
-        st.session_state.auto_advance_flash = False
-        st.rerun()
-
-    if st.session_state.has_responded and not st.session_state.auto_advance_flash:
-        st.markdown(f'<div class="explanation-wrap"><div class="explanation-label">💡 სამედიცინო განმარტება</div><div class="explanation-body">{explanation_text}</div></div>', unsafe_allow_html=True)
-        st.write("")
-        if st.button("შემდეგი კითხვა →", type="primary", use_container_width=True):
+    # შემდეგი ნაბიჯი
+    if st.session_state.has_responded:
+        st.markdown(f'<div class="explanation-wrap"><div class="explanation-label">💡 განმარტება</div><div class="explanation-body">{explanation_text}</div></div>', unsafe_allow_html=True)
+        if st.button("შემდეგი →", type="primary", use_container_width=True):
             st.session_state.current_idx += 1
             st.session_state.has_responded = False
             st.session_state.user_choice = None
             st.rerun()
 else:
-    # ——— შედეგების ეკრანი ———
-    if not st.session_state.review_mode:
-        total = st.session_state.correct_count + st.session_state.wrong_count
-        score = (st.session_state.correct_count / total) * 100 if total > 0 else 0
-        if not st.session_state.stats_saved:
-            save_session_stats(st.session_state.correct_count, st.session_state.wrong_count, total, score, st.session_state.wrong_indices)
-            st.session_state.stats_saved = True
-        st.write("## 📊 ტესტირების შედეგები")
-        col1, col2, col3 = st.columns(3)
-        col1.metric("სწორი", f"✅ {st.session_state.correct_count}")
-        col2.metric("შეცდომა", f"❌ {st.session_state.wrong_count}")
-        col3.metric("შედეგი", f"{score:.1f}%")
-        if st.button("🔄 თავიდან დაწყება", use_container_width=True):
-            st.session_state.clear()
-            st.rerun()
+    # შედეგები
+    total = st.session_state.correct_count + st.session_state.wrong_count
+    score = (st.session_state.correct_count / total) * 100 if total > 0 else 0
+    if not st.session_state.stats_saved:
+        save_session_stats(st.session_state.correct_count, st.session_state.wrong_count, total, score, st.session_state.wrong_indices)
+        st.session_state.stats_saved = True
+    
+    st.write(f"## შედეგი: {score:.1f}%")
+    if st.button("🔄 თავიდან"):
+        st.session_state.clear()
+        st.rerun()
