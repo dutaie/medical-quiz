@@ -1,237 +1,3 @@
-
-Welcome, Fishbone! I’m Claude.
-Bring me anything—a tough problem, a half-formed idea, something you need to write. We’ll figure it out together.
-
-Where do you want to start?
-
-
-import streamlit as st import json import os import time # 1. გვერდის ბაზისური კონფიგურაცია st.set_page_config(page_title="სამედიცინო ტესტები", page_icon="🧬", layout="centered") # 2. სუფთა და მკაცრი CSS სტილები (მარცხნივ გასწორება, ზედა მარჟინების მოკვლა და მაღალი კითხვითობა) st.markdown
-
-pasted
-
-ამ კოდის HTML მხარე ცოტა დამიხვეწე, ვიზუალი ისე ამიწყე რომ ლამაზი და კომფორტული იყოს ტელეფონიდან და ლანშეტიდან სამუშაოდაც
-
-Jun 2
-
-Reading the frontend design skill
-Reading the frontend design skill
-ახლა კოდს დეტალურად განვიხილავ და CSS-ს გავაახლებ:
-
-ახლა CSS-ს ვწერ Streamlit-ისთვის, რომელიც ტელეფონსა და ტაბლეტზე კარგად გამოიყურება:
-
-V
-
-Connecting to visualize...
-ახლა მზად ვარ განახლებული CSS-ის სრული კოდი მოგცე. ეს არის ვიზუალური preview — ახლა კი გაქვთ განახლებული სრული Python ფაილი:
-
-
-Ran a command, read a file
-Ran a command, read a file
-ჩამოტვირთეთ — აი, რა შეიცვალა:
-
-ვიზუალი და UX:
-
-Noto Sans Georgian — სპეციალურად ქართული ენისთვის შექმნილი, კარგი კითხვადობის შრიფტი, ყველა ელემენტზე
-ლამაზი header — მუქი გრადიენტის ბანერი ბაზის კითხვების რაოდენობით
-ლამაზი progress bar — 
-#2a6bcd ლურჯი, 6px სიმაღლე, პატარა და მოწესრიგებული
-ქართული ანბანი ვარიანტებზე — ა) ბ) გ) დ) სტილი, არა A/B/C/D
-მობილური და ტაბლეტი:
-
-max-width: 680px — არ გაიჭიმება დიდ ეკრანზე
-@media (max-width: 600px) — ფონტი 15-16px-ზე, padding მინიმუმამდე
-@media 601–1024px — ტაბლეტისთვის ოპტიმალური padding
-ღილაკების min-height: 52px — კომფორტული სენსორული სამიზნე
-შედეგების ეკრანი:
-
-ფერადი ბანერი შედეგის მიხედვით — 🎉 მწვანე / 👍 ყვითელი / 📚 წითელი
-metric ბარათები გამოიყურება მოწესრიგებულად, ცენტრაციით
-
-App
-PY 
-სწორი პასუხის მონშვნისას ეგრევე გადადის შემდეგზე, შესაძლებელია რომ ის ველი გამწვანდეს და მცირე დაყოვნების შემდეგ გადავიდეს შემდეგზე, თვალში ცუდად მხვდება რო ქრება ეგრევე, ასევე შეცდომების გავლის შემდეგ თუ კიდე შეცდომები იქნება იმ ტესტებში რომელიც შეცდომა იყო კიდევა ხლიდან შემომთავაზოს იმათი გავლა სანამ სუყველა სწორი არ იქნება
-
-Jun 2
-კოდს ვნახავ და ორივე ცვლილებას შევიტან:
-
-
-Reading the current app.py
-Reading the current app.py
-ახლა ორივე ლოგიკის ცვლილება შეაქვს — დაყოვნება და review loop:
-
-
-Ran a command, read a file
-Ran a command, read a file
-ორი ცვლილება შევიტანე:
-
-1. სწორი პასუხის დაყოვნება:
-
-time.sleep(0.4) → time.sleep(1.2) — ახლა 1.2 წამი ჩანს მწვანე ღილაკი სანამ გადავა შემდეგ კითხვაზე, კარგად ჩანს თვალში
-2. Review loop — უსასრულო გადახედვა სანამ 0 შეცდომა:
-
-review-ის დროს ახალი შეცდომები ინახება ცალ ცვლადში (review_wrong_indices), ძველი ჩამონათვალი არ ირევა
-ყოველი ტურის შემდეგ: თუ ახალი შეცდომა იყო → გამოჩნდება "კიდევ ერთი ტური (N კითხვა)" ღილაკი, ხოლო ეკრანზე ეწერება #1, #2, #3... რომელ ტურში ხართ
-როცა ყველა სწორია → "🎉 ყველა შეცდომა გასწორდა! გადახედვის N ტური დასჭირდა"
-
-App
-PY 
-ანუ სორი პასუხის მონშვნისას ქრება საერთოდ კითხვები და ისე გადადის შემდეგზე, ამის გამოსწორება მინდოდა, რო მარ გაქრეს, და ისე გამწვანდეს ის უჯრა და შემდეგ გადავიდეს შემდეგზე
-
-Jun 2
-გასაგებია — პრობლემა არის ის, რომ st.rerun() ეძახება ღილაკზე დაჭერის შემდეგ, გვერდი ხელახლა ხდება render-ი და ამ მომენტში ღილაკები ჯერ კიდევ არ გამწვანებულა — გადასვლა ხდება auto_advance_flash ბლოკში, რომელიც გვერდის თავშია.
-
-გამოსავალი: auto_advance_flash-ის sleep-ი ბოლოში გადავიტანოთ, ღილაკების render-ის შემდეგ, რათა ჯერ გამწვანებული ღილაკები გამოჩნდეს, მერე დაელოდოს და გადავიდეს.
-
-
-Viewed 2 files
-Viewed 2 files
-ახლა ვხედავ პრობლემას. auto_advance_flash ბლოკი ღილაკების წინ არის — ამიტომ გვერდი სძინავს და გადადის ღილაკების render-მდე. სწორი თანმიმდევრობა: ჯერ ღილაკები render-ი, მერე sleep, მერე გადასვლა.
-
-
-Move auto_advance_flash block to AFTER buttons are rendered, so green button shows first, then sleeps, then advances
-Move auto_advance_flash block to AFTER buttons are rendered, so green button shows first, then sleeps, then advances
-ახლა ვამოწმებ რომ სწორია:
-
-
-Viewed a file, read a file
-Viewed a file, read a file
-გამოსწორდა. პრობლემა იყო თანმიმდევრობა — ადრე sleep და გადასვლა ღილაკების render-მდე იყო, ამიტომ Streamlit-ს არ ჰქონდა დრო გამწვანებული ღილაკი ეჩვენებინა.
-
-ახლა თანმიმდევრობა ასეთია:
-
-მომხმარებელი ირჩევს სწორ პასუხს → st.rerun()
-ღილაკები render-დება — სწორი მწვანეა, disabled
-time.sleep(1.2) — მწვანე ღილაკი 1.2 წამი ჩანს
-st.rerun() → გადადის შემდეგ კითხვაზე
-
-App
-PY 
-რამეს ხომ არ შეცვლიდი ან დაამატებდი უფრო მარტივი სახმარი რომ იყოს რას ფიქრობ შეცვლიდი რამეს?
-
-Jun 2
-რამდენიმე რაღაც მაქვს გონში, ყველაზე სასარგებლო რომ იქნებოდა:
-
-1. კითხვების შერევა (shuffle) ახლა ყოველ ჯერზე ერთი და იმავე თანმიმდევრობით გადის. თუ shuffle-ს დაამატებ, ტესტი ბევრად უფრო ეფექტური გახდება — ვარიანტებიც შეირიოს, კითხვებიც.
-
-2. "ბოლო შეცდომა" ინდიკატორი კითხვის ზევით სწორ პასუხზე ჩანდეს პატარა ✅ / ❌ streak — მაგ: "ბოლო 5: ✅✅❌✅✅" — მოტივაციისთვის.
-
-3. სტატისტიკის შენახვა სესიებს შორის localStorage-ის ანალოგი Streamlit-ში — shelve ან JSON ფაილი — რომ ხვალ გახსნა და გქონდეს ისტორია: რომელ კითხვებში ყველაზე ხშირად ცდები, საერთო პროგრესი.
-
-4. დროის ლიმიტი (არასავალდებულო) გვერდის ზედა ნაწილში პატარა ტაიმერი — 30/60 წამი კითხვაზე — ვინც ამ რეჟიმს ირჩევს.
-
-5. კითხვის ნომრის პირდაპირ გადასვლა პროგრესბარზე tap/click → გამოჩნდეს "გადასვლა კითხვაზე #___" — სასარგებლოა როცა ბევრი კითხვა გაქვს და კონკრეტულს ეძებ.
-
-ჩემი აზრით ყველაზე მეტ ღირებულებას მოიტანს shuffle + სტატისტიკის შენახვა — პირველი იმიტომ რომ სწავლა ბევრად უფრო ეფექტურია თუ ვარიანტების წყობა არ გახსოვს, მეორე კი იმიტომ რომ დროთა განმავლობაში ხვდები სად გაქვს სუსტი ადგილები.
-
-რომელი გინდა დავამატოთ?
-
-ორივე დაამატე აბა და ვნახავ
-
-Jun 2
-კოდს ვნახავ და ორივეს ვამატებ:
-
-
-Reading full app.py to understand current structure
-Reading full app.py to understand current structure
-სრული სტრუქტურა ვნახე. ახლა ვწერ განახლებულ ვერსიას shuffle-ით და სტატისტიკის შენახვით:
-
-
-Ran a command, read a file
-Ran a command, read a file
-აი რა დაემატა:
-
-🔀 Shuffle (კითხვებისა და ვარიანტების შერევა)
-
-საწყის ეკრანზე checkbox: "კითხვები და ვარიანტები შეირიოს" — ნაგულისხმევად ჩართულია
-კითხვებიც შეირევა, ვარიანტებიც — ყოველ სესიაზე სხვადასხვა თანმიმდევრობა
-სწორი პასუხის ლოგიკა ყოველთვის ზუსტია, shuffle-ის მიუხედავად
-review-ის დროსაც ახლიდან ირევა
-📊 სტატისტიკა (სესიებს შორის ინახება)
-
-shelve ფაილი — სერვერის გადატვირთვის შემდეგაც ინახება, quiz_stats.db ფაილი ჩნდება app.py-ს გვერდით
-საწყის ეკრანზე "📊 სტატისტიკა" tab — ნახავ:
-სულ ჩატარებული ტესტების რაოდენობა, გავლილი კითხვები, საშუალო და საუკეთესო შედეგი
-ბოლო 5 სესიის ისტორია თარიღითა და ქულით
-ყველაზე ხშირი შეცდომები — რომელ კითხვაზე რამდენჯერ შეგეშალა
-"სტატისტიკის გასუფთავება" ღილაკი თუ გინდა ნულიდან დაიწყო
-
-App
-PY 
-File "/mount/src/medical-quiz/app.py", line 470, in <module>
-    if current_idx not in st.session_state.option_order_map:
-                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-File "/home/adminuser/venv/lib/python3.14/site-packages/streamlit/runtime/state/session_state_proxy.py", line 132, in __getattr__     raise AttributeError(_missing_attr_error_message(key)) ეს შეცდოამ მიჩვენა
-
-Jun 2
-პრობლემა იმაშია რომ option_order_map session_state-ში ინიციალიზდება მხოლოდ "quiz_started" not in st.session_state შემოწმებაში — მაგრამ review-ის დროს ეს ბლოკი არ გაიარება და ცვლადი არ არსებობს. გამოსავალი: setdefault-ით ვამოწმებთ ყოველ render-ზე.
-
-
-Fix option_order_map AttributeError by ensuring it always exists before use
-Fix option_order_map AttributeError by ensuring it always exists before use
-ახლა იმავე პრობლემის თავიდან ასარიდებლად review_wrong_indices-საც ვამოწმებ:
-
-
-Edited 2 files, viewed a file
-Edited 2 files, viewed a file
-ვამოწმებ რომ სწორია:
-
-
-Viewed a file, read a file
-Viewed a file, read a file
-გამოსწორდა. პრობლემა იყო ის, რომ Streamlit-ის session_state გვერდის გადატვირთვისას ხანდახან ნაწილობრივ იკარგება — განსაკუთრებით Streamlit Cloud-ზე. ახლა კითხვის ეკრანამდე ყოველ render-ზე ვამოწმებთ:
-
-option_order_map — ვარიანტების shuffle-ის რუქა
-shuffle_on — შერევა ჩართულია თუ არა
-review_wrong_indices — გადახედვის შეცდომების სია
-review_round — გადახედვის ტური
-review_mode — გადახედვის რეჟიმი
-თუ რომელიმე არ არსებობს, ნაგულისხმევ მნიშვნელობას მიანიჭებს და შეცდომა აღარ მოხდება.
-
-
-App
-PY 
-მშვენიერი, ვიზუალურ მხარეშიც ხომ არ გაქვს რაიმე შემოთავაზებები?
-
-Jun 2
-რამდენიმე კონკრეტული რამ მაქვს გონში:
-
-1. სწრაფი სტატუს ბარი კითხვის ზევით ახლა მხოლოდ "კითხვა X/Y" ტექსტი და progress bar გაქვს. შეიძლება დაემატოს პატარა ✅ N · ❌ N — ერთი შეხედვით ხედავ სად ხარ.
-
-2. კითხვის ბარათი უფრო "მყარი" გახდეს ახლა st.info() გამოიყენება — Streamlit-ის სტანდარტული კომპონენტი. custom HTML div-ით კითხვა უფრო კარგად გამოიყურება, ფონტის ზომა და padding-ი სრულად კონტროლდება.
-
-3. ვარიანტების ნომრები (ა/ბ/გ/დ) ცალ bubble-ში ახლა ტექსტშია ჩაწერილი **ა)**. თუ მომრგვალო badge-ად გამოვიყვანთ — გარეგნულად ბევრად სუფთა გამოიყურება, ისევე როგორც პროფესიულ ტესტ-აპებში.
-
-4. შედეგების ეკრანზე მინი progress ring მეტრიკების (✅ ❌ %) ნაცვლად ან გვერდით — მომრგვალო SVG gauge რომელიც ქულას ვიზუალურად გადმოსცემს. ერთი შეხედვით გასაგებია.
-
-5. სწორი/შეცდომის ანიმაცია ახლა ფერი უბრალოდ "ჩნდება". CSS transition-ით ნელა "ამოდის" მწვანე/წითელი — ბევრად უფრო smooth.
-
-ჩემი აზრით ყველაზე ეფექტური კომბინაცია იქნება 1 + 3 + 4 — ყველაზე ნაკლები კოდი, ყველაზე დიდი ვიზუალური განსხვავება.
-
-რომელი გინდა დავამატო, ან ყველა?
-
-ყველა დაამატე რაც მოგივა აზრად რომ უფრო გაალამაზებს ამ აპლიკაციას და უფრო smooth იქნება
-
-Jun 2
-კარგი, სრულად გადავაკეთებ ვიზუალს. ჯერ კოდს ვნახავ:
-
-
-Viewed 2 files
-Viewed 2 files
-სრული სურათი ვნახე. ახლა ვწერ სრულად გადახედულ ვერსიას ყველა ვიზუალური გაუმჯობესებით:
-
-
-Writing fully redesigned app.py with all visual improvements
-Writing fully redesigned app.py with all visual improvements
-
-
-You are out of free messages until 3:40 AM
-Keep working
-
-
-
-
-Claude is AI and can make mistakes. Please double-check responses.
-App · PY
 import streamlit as st
 import json
 import os
@@ -239,29 +5,29 @@ import time
 import random
 import shelve
 from datetime import datetime
- 
+
 st.set_page_config(page_title="სამედიცინო ტესტები", page_icon="🧬", layout="centered")
- 
+
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap');
- 
+
 html, body, [class*="css"] {
     font-family: 'Noto Sans Georgian', sans-serif !important;
 }
- 
+
 .block-container {
     padding-top: 1rem !important;
     padding-bottom: 2rem !important;
     max-width: 700px !important;
 }
- 
+
 header[data-testid="stHeader"] { height: 0 !important; background: transparent !important; }
- 
+
 /* ——— progress bar ——— */
 .stProgress > div > div { height: 7px !important; border-radius: 99px !important; background: #e8edf5 !important; }
 .stProgress > div > div > div { background: linear-gradient(90deg, #2a6bcd, #4f9cf9) !important; border-radius: 99px !important; transition: width 0.4s ease !important; }
- 
+
 /* ——— კითხვის ბარათი ——— */
 .q-card {
     background: #ffffff;
@@ -297,7 +63,7 @@ header[data-testid="stHeader"] { height: 0 !important; background: transparent !
     color: #1a2845;
     font-family: 'Noto Sans Georgian', sans-serif;
 }
- 
+
 /* ——— სტატუს ბარი ——— */
 .status-bar {
     display: flex;
@@ -319,7 +85,7 @@ header[data-testid="stHeader"] { height: 0 !important; background: transparent !
 }
 .chip-correct { background: #f0fdf4; color: #15803d; }
 .chip-wrong   { background: #fff2f2; color: #b91c1c; }
- 
+
 /* ——— ვარიანტის ღილაკები ——— */
 div.stButton > button[kind="secondary"] {
     font-family: 'Noto Sans Georgian', sans-serif !important;
@@ -366,9 +132,9 @@ div.stButton > button[kind="secondary"]:disabled {
     transform: none !important;
     box-shadow: none !important;
 }
- 
+
 /* ——— სწორი / შეცდომა — ფერები (Python nth-child override-ით) ——— */
- 
+
 /* ——— განმარტების ბარათი ——— */
 .explanation-wrap {
     background: #f8faff;
@@ -397,7 +163,7 @@ div.stButton > button[kind="secondary"]:disabled {
     color: #1e2d40;
     font-family: 'Noto Sans Georgian', sans-serif;
 }
- 
+
 /* ——— primary ღილაკი ——— */
 div.stButton > button[kind="primary"] {
     font-family: 'Noto Sans Georgian', sans-serif !important;
@@ -420,7 +186,7 @@ div.stButton > button[kind="primary"]:hover {
 div.stButton > button[kind="primary"]:active {
     transform: translateY(0) !important;
 }
- 
+
 /* ——— შედეგების SVG gauge ——— */
 .result-gauge-wrap {
     display: flex;
@@ -428,7 +194,7 @@ div.stButton > button[kind="primary"]:active {
     align-items: center;
     margin: 8px 0 20px;
 }
- 
+
 /* ——— შედეგების ბარათები ——— */
 .result-chips {
     display: flex;
@@ -447,7 +213,7 @@ div.stButton > button[kind="primary"]:active {
 .result-chip-icon { font-size: 24px; margin-bottom: 4px; }
 .result-chip-num  { font-size: 22px; font-weight: 700; color: #1a2845; }
 .result-chip-lbl  { font-size: 12px; color: #8a93a6; margin-top: 2px; }
- 
+
 /* ——— სტატისტიკა ——— */
 .stat-card {
     background: #f8faff;
@@ -488,7 +254,7 @@ div.stButton > button[kind="primary"]:active {
     font-family: 'Noto Sans Georgian', sans-serif;
     border: 1px solid #fecaca;
 }
- 
+
 /* ——— notification banners ——— */
 .banner {
     border-radius: 14px;
@@ -508,7 +274,7 @@ div.stButton > button[kind="primary"]:active {
 .banner-yellow .banner-sub   { color:#78350f; }
 .banner-red    .banner-title { color:#b91c1c; }
 .banner-red    .banner-sub   { color:#991b1b; }
- 
+
 /* ——— number_input, tabs ——— */
 input[type="number"] {
     font-family: 'Noto Sans Georgian', sans-serif !important;
@@ -519,7 +285,7 @@ button[data-baseweb="tab"] p {
     font-family: 'Noto Sans Georgian', sans-serif !important;
     font-size: 14px !important;
 }
- 
+
 /* ——— responsive ——— */
 @media (max-width: 600px) {
     .block-container { padding-left: 10px !important; padding-right: 10px !important; }
@@ -534,18 +300,18 @@ button[data-baseweb="tab"] p {
 }
 </style>
 """, unsafe_allow_html=True)
- 
- 
+
+
 # ——— სტატისტიკის ფუნქციები ———
 STATS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quiz_stats")
- 
+
 def load_stats():
     with shelve.open(STATS_FILE) as db:
         return {
             "sessions": db.get("sessions", []),
             "question_wrong_counts": db.get("question_wrong_counts", {}),
         }
- 
+
 def save_session_stats(correct, wrong, total, score, wrong_indices):
     with shelve.open(STATS_FILE) as db:
         sessions = db.get("sessions", [])
@@ -562,12 +328,12 @@ def save_session_stats(correct, wrong, total, score, wrong_indices):
             key = str(idx + 1)
             q_wrong[key] = q_wrong.get(key, 0) + 1
         db["question_wrong_counts"] = q_wrong
- 
+
 def clear_stats():
     with shelve.open(STATS_FILE) as db:
         db["sessions"] = []
         db["question_wrong_counts"] = {}
- 
+
 def score_gauge_svg(score):
     """SVG gauge შედეგის ვიზუალიზაციისთვის."""
     pct = min(max(score, 0), 100)
@@ -581,13 +347,13 @@ def score_gauge_svg(score):
     else:
         clr1, clr2, txt_clr = "#dc2626", "#f87171", "#b91c1c"
         emoji = "📚"
- 
+
     r = 70
     cx, cy = 90, 90
     circumference = 3.14159 * r  # ნახევარი წრე
     dash = (pct / 100) * circumference
     gap = circumference - dash
- 
+
     return f"""
     <div class="result-gauge-wrap">
       <svg width="180" height="110" viewBox="0 0 180 110">
@@ -614,7 +380,7 @@ def score_gauge_svg(score):
       </svg>
     </div>
     """
- 
+
 # ——— კითხვების ჩატვირთვა ———
 @st.cache_data
 def load_quiz_data():
@@ -624,14 +390,14 @@ def load_quiz_data():
         with open(json_path, "r", encoding="utf-8", errors="ignore") as file:
             return json.load(file)
     return []
- 
+
 quiz_data = load_quiz_data()
- 
+
 if not quiz_data:
     st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
     st.stop()
- 
- 
+
+
 # ——— session_state ინიციალიზაცია ———
 if "quiz_started" not in st.session_state:
     st.session_state.quiz_started    = False
@@ -649,12 +415,12 @@ if "quiz_started" not in st.session_state:
     st.session_state.option_order_map = {}
     st.session_state.stats_saved     = False
     st.session_state.shuffle_on      = True
- 
- 
+
+
 # ——— საწყისი ეკრანი ———
 if not st.session_state.quiz_started:
     total_questions = len(quiz_data)
- 
+
     st.markdown(f"""
     <div style="
         background: linear-gradient(135deg, #1a2845 0%, #1e5bb8 60%, #4f9cf9 100%);
@@ -675,9 +441,9 @@ if not st.session_state.quiz_started:
         </div>
     </div>
     """, unsafe_allow_html=True)
- 
+
     tab1, tab2 = st.tabs(["📝  ტესტი", "📊  სტატისტიკა"])
- 
+
     with tab1:
         st.markdown('<p style="font-size:15px; font-weight:600; color:#1a2845; margin-bottom:12px; font-family:\'Noto Sans Georgian\',sans-serif;">⚙️ კითხვების დიაპაზონი</p>', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
@@ -685,9 +451,9 @@ if not st.session_state.quiz_started:
             start_q = st.number_input("საიდან:", min_value=1, max_value=total_questions, value=1, step=1)
         with col2:
             end_q = st.number_input("სად მდე:", min_value=1, max_value=total_questions, value=min(20, total_questions), step=1)
- 
+
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
- 
+
         if start_q > end_q:
             st.markdown('<div class="banner banner-red"><p class="banner-title">⚠️ საწყისი კითხვა საბოლოოზე მეტია!</p></div>', unsafe_allow_html=True)
         else:
@@ -706,12 +472,12 @@ if not st.session_state.quiz_started:
                 st.session_state.quiz_started    = True
                 st.session_state.stats_saved     = False
                 st.rerun()
- 
+
     with tab2:
         stats    = load_stats()
         sessions = stats["sessions"]
         q_wrong  = stats["question_wrong_counts"]
- 
+
         if not sessions:
             st.markdown(
                 '<div style="text-align:center; padding:36px 0; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif; font-size:15px; line-height:1.8;">'
@@ -723,7 +489,7 @@ if not st.session_state.quiz_started:
             all_total   = sum(s["total"]   for s in sessions)
             avg_score   = sum(all_scores)  / len(all_scores)
             best_score  = max(all_scores)
- 
+
             st.markdown(f"""
             <div class="stat-card">
                 <div class="stat-card-title">ზოგადი მაჩვენებლები</div>
@@ -733,13 +499,13 @@ if not st.session_state.quiz_started:
                 <div class="stat-row"><span class="stat-row-label">საუკეთესო</span><span class="stat-row-value">🏆 {best_score:.1f}%</span></div>
             </div>
             """, unsafe_allow_html=True)
- 
+
             rows = ""
             for s in reversed(sessions[-5:]):
                 clr = "#15803d" if s["score"] >= 80 else ("#92400e" if s["score"] >= 60 else "#b91c1c")
                 rows += f'<div class="stat-row"><span class="stat-row-label">{s["date"]} &nbsp;·&nbsp; {s["total"]} კ.</span><span class="stat-row-value" style="color:{clr};">{s["score"]}%</span></div>'
             st.markdown(f'<div class="stat-card"><div class="stat-card-title">ბოლო სესიები</div>{rows}</div>', unsafe_allow_html=True)
- 
+
             if q_wrong:
                 sorted_wrong = sorted(q_wrong.items(), key=lambda x: x[1], reverse=True)[:12]
                 badges = "".join([f'<span class="weak-q-badge">#{qn} ({cnt}✗)</span>' for qn, cnt in sorted_wrong])
@@ -750,15 +516,15 @@ if not st.session_state.quiz_started:
                     <div style="font-size:12px; color:#8a93a6; margin-top:6px; font-family:'Noto Sans Georgian',sans-serif;">ფრჩხილში — რამდენჯერ შეგეშალა</div>
                 </div>
                 """, unsafe_allow_html=True)
- 
+
             st.write("")
             if st.button("🗑️  სტატისტიკის გასუფთავება", use_container_width=True):
                 clear_stats()
                 st.rerun()
- 
+
     st.stop()
- 
- 
+
+
 # ——— კითხვის ეკრანი — safety guards ———
 if "option_order_map"      not in st.session_state: st.session_state.option_order_map      = {}
 if "stats_saved"           not in st.session_state: st.session_state.stats_saved           = False
@@ -766,16 +532,16 @@ if "shuffle_on"            not in st.session_state: st.session_state.shuffle_on 
 if "review_wrong_indices"  not in st.session_state: st.session_state.review_wrong_indices  = []
 if "review_round"          not in st.session_state: st.session_state.review_round          = 0
 if "review_mode"           not in st.session_state: st.session_state.review_mode           = False
- 
+
 active_indices = st.session_state.active_indices
 current_idx    = st.session_state.current_idx
- 
+
 LETTERS = ["ა", "ბ", "გ", "დ", "ე", "ვ"]
- 
+
 if current_idx < len(active_indices):
     real_idx = active_indices[current_idx]
     q_data   = quiz_data[real_idx]
- 
+
     # ვარიანტების shuffle — ერთხელ, შემდეგ ინახება
     if current_idx not in st.session_state.option_order_map:
         order = list(range(len(q_data["options"])))
@@ -783,12 +549,12 @@ if current_idx < len(active_indices):
             random.shuffle(order)
         st.session_state.option_order_map[current_idx] = order
     option_order = st.session_state.option_order_map[current_idx]
- 
+
     original_correct  = q_data["correct"]
     correct_idx       = option_order.index(original_correct)
- 
+
     mode_txt = f" · გადახედვა #{st.session_state.review_round}" if st.session_state.review_mode else ""
- 
+
     # ——— სტატუს ბარი ———
     st.markdown(f"""
     <div class="status-bar">
@@ -799,10 +565,10 @@ if current_idx < len(active_indices):
         </span>
     </div>
     """, unsafe_allow_html=True)
- 
+
     st.progress((current_idx + 1) / len(active_indices))
     st.write("")
- 
+
     # ——— კითხვის ბარათი ———
     st.markdown(f"""
     <div class="q-card">
@@ -811,14 +577,14 @@ if current_idx < len(active_indices):
     </div>
     """, unsafe_allow_html=True)
     st.write("")
- 
+
     options = q_data["options"]
- 
+
     # ——— ფერების CSS override ———
     if st.session_state.has_responded:
         correct_child = correct_idx + 1
         chosen_child  = st.session_state.user_choice + 1
- 
+
         css = f"""
         <style>
         div[data-testid="stVerticalBlock"] > div:nth-child({correct_child}) button[kind="secondary"]:disabled {{
@@ -841,7 +607,7 @@ if current_idx < len(active_indices):
             """
         css += "</style>"
         st.markdown(css, unsafe_allow_html=True)
- 
+
     # ——— ვარიანტები ———
     with st.container():
         for display_idx, original_idx in enumerate(option_order):
@@ -852,7 +618,7 @@ if current_idx < len(active_indices):
                          use_container_width=True):
                 st.session_state.has_responded = True
                 st.session_state.user_choice   = display_idx
- 
+
                 if display_idx == correct_idx:
                     if not st.session_state.review_mode:
                         st.session_state.correct_count += 1
@@ -866,7 +632,7 @@ if current_idx < len(active_indices):
                         if real_idx not in st.session_state.review_wrong_indices:
                             st.session_state.review_wrong_indices.append(real_idx)
                 st.rerun()
- 
+
     # სწორ პასუხზე: ღილაკები render-ია → მწვანე ჩანს → ვიცდით → გადადის
     if st.session_state.auto_advance_flash:
         time.sleep(1.2)
@@ -875,7 +641,7 @@ if current_idx < len(active_indices):
         st.session_state.user_choice        = None
         st.session_state.auto_advance_flash = False
         st.rerun()
- 
+
     # განმარტება — მხოლოდ შეცდომაზე
     if st.session_state.has_responded and not st.session_state.auto_advance_flash:
         st.markdown(f"""
@@ -885,20 +651,20 @@ if current_idx < len(active_indices):
         </div>
         """, unsafe_allow_html=True)
         st.write("")
- 
+
         if st.button("შემდეგი კითხვა  →", type="primary", use_container_width=True):
             st.session_state.current_idx   += 1
             st.session_state.has_responded  = False
             st.session_state.user_choice    = None
             st.rerun()
- 
- 
+
+
 # ——— შედეგების / გადახედვის ეკრანი ———
 else:
     if not st.session_state.review_mode:
         total = st.session_state.correct_count + st.session_state.wrong_count
         score = (st.session_state.correct_count / total * 100) if total > 0 else 0
- 
+
         if not st.session_state.stats_saved:
             save_session_stats(
                 st.session_state.correct_count,
@@ -907,14 +673,14 @@ else:
                 st.session_state.wrong_indices
             )
             st.session_state.stats_saved = True
- 
+
         st.balloons()
- 
+
         st.markdown('<p style="font-size:20px; font-weight:700; color:#1a2845; margin-bottom:4px; font-family:\'Noto Sans Georgian\',sans-serif;">📊 ტესტირების შედეგები</p>', unsafe_allow_html=True)
- 
+
         # SVG Gauge
         st.markdown(score_gauge_svg(score), unsafe_allow_html=True)
- 
+
         # 3 ბარათი
         st.markdown(f"""
         <div class="result-chips">
@@ -935,18 +701,18 @@ else:
             </div>
         </div>
         """, unsafe_allow_html=True)
- 
+
         if score >= 80:
             st.markdown('<div class="banner banner-green"><p class="banner-title">🎉 შესანიშნავი შედეგი!</p><p class="banner-sub">გააგრძელეთ ამ ტემპით.</p></div>', unsafe_allow_html=True)
         elif score >= 60:
             st.markdown('<div class="banner banner-yellow"><p class="banner-title">👍 კარგი შედეგი!</p><p class="banner-sub">კიდევ ცოტა ვარჯიში და შესანიშნავი იქნება.</p></div>', unsafe_allow_html=True)
         else:
             st.markdown('<div class="banner banner-red"><p class="banner-title">📚 კიდევ ვარჯიში გჭირდებათ</p><p class="banner-sub">შეცდომების გადახედვა დაგეხმარება.</p></div>', unsafe_allow_html=True)
- 
+
         if st.session_state.wrong_indices:
             wrong_nums = [str(i+1) for i in st.session_state.wrong_indices]
             st.markdown(f'<div class="banner banner-red"><p class="banner-title">❌ შეცდომები ({len(wrong_nums)} კითხვა)</p><p class="banner-sub">ბაზის ნომრები: {", ".join(wrong_nums)}</p></div>', unsafe_allow_html=True)
- 
+
             if st.button("🔁  შეცდომების ხელახლა გავლა", type="primary", use_container_width=True):
                 wrong_list = list(st.session_state.wrong_indices)
                 if st.session_state.shuffle_on:
@@ -962,13 +728,13 @@ else:
                 st.rerun()
         else:
             st.markdown('<div class="banner banner-green"><p class="banner-title">🎉 ყველა კითხვა სწორად!</p></div>', unsafe_allow_html=True)
- 
+
         st.write("")
- 
+
     else:
         round_num = st.session_state.review_round
         new_wrong = st.session_state.review_wrong_indices
- 
+
         if not new_wrong:
             st.balloons()
             st.markdown(
@@ -999,8 +765,7 @@ else:
                 st.session_state.has_responded         = False
                 st.session_state.user_choice           = None
                 st.rerun()
- 
+
     if st.button("🔄  თავიდან დაწყება", use_container_width=True):
         st.session_state.clear()
         st.rerun()
- 
