@@ -489,7 +489,7 @@ if current_idx < len(active_indices):
     option_order = st.session_state.option_order_map[current_idx]
 
     # shuffle-ის გათვალისწინებით: სწორი პასუხის ახალი ინდექსი
-    original_correct = q_data["correct"]
+    original_correct = q_data["correct_answer"]
     shuffled_correct_idx = option_order.index(original_correct)
 
     if st.session_state.review_mode:
