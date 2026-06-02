@@ -334,15 +334,6 @@ if current_idx < len(active_indices):
         color_override += "</style>"
         st.markdown(color_override, unsafe_allow_html=True)
 
-    # ——— სწორ პასუხზე: გამწვანებული ველი ჩანს 1.2 წამი, შემდეგ გადადის ———
-    if st.session_state.auto_advance_flash:
-        time.sleep(1.2)
-        st.session_state.current_idx += 1
-        st.session_state.has_responded = False
-        st.session_state.user_choice = None
-        st.session_state.auto_advance_flash = False
-        st.rerun()
-
     options_block = st.container()
     with options_block:
         letters = ["ა", "ბ", "გ", "დ", "ე", "ვ"]
@@ -371,6 +362,15 @@ if current_idx < len(active_indices):
                         if real_idx not in st.session_state.review_wrong_indices:
                             st.session_state.review_wrong_indices.append(real_idx)
                 st.rerun()
+
+    # ——— სწორ პასუხზე: ღილაკები უკვე render-ია (მწვანე ჩანს), ვიცდით, შემდეგ გადადის ———
+    if st.session_state.auto_advance_flash:
+        time.sleep(1.2)
+        st.session_state.current_idx += 1
+        st.session_state.has_responded = False
+        st.session_state.user_choice = None
+        st.session_state.auto_advance_flash = False
+        st.rerun()
 
     # განმარტება — ჩანს მხოლოდ შეცდომაზე (სწორზე ელოდება auto_advance)
     if st.session_state.has_responded and not st.session_state.auto_advance_flash:
