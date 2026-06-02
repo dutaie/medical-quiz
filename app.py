@@ -11,63 +11,23 @@ st.set_page_config(page_title="სამედიცინო ტესტებ
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap');
-
     html, body, [class*="css"] { font-family: 'Noto Sans Georgian', sans-serif !important; }
     .block-container { padding-top: 1.25rem !important; padding-bottom: 1.5rem !important; max-width: 680px !important; }
-
-    /* კითხვის წაკითხვადობა */
     div[data-testid="stAlert"][kind="info"] * { color: #000000 !important; font-weight: 500 !important; font-size: 18px !important; line-height: 1.6 !important; }
     div[data-testid="stAlert"][kind="info"] { background: #eef4ff !important; border: none !important; border-left: 4px solid #2a6bcd !important; border-radius: 14px !important; padding: 18px 20px !important; }
-
     header[data-testid="stHeader"] { height: 0 !important; background: transparent !important; }
-
-    div.stButton > button[kind="secondary"] {
-        font-family: 'Noto Sans Georgian', sans-serif !important;
-        font-size: 16px !important;
-        width: 100% !important;
-        min-height: 52px !important;
-        padding: 13px 18px !important;
-        background: #ffffff !important;
-        color: #1e2d40 !important;
-        border: 1.5px solid #d5dbe8 !important;
-        border-radius: 12px !important;
-    }
     
-    .explanation-wrap { background: #f7f9fc; border-radius: 14px; border: 1.5px solid #dde3f0; padding: 18px 20px; margin-top: 4px; }
+    div.stButton > button[kind="secondary"] { font-family: 'Noto Sans Georgian', sans-serif !important; font-size: 16px !important; width: 100% !important; min-height: 52px !important; padding: 13px 18px !important; background: #ffffff !important; color: #1e2d40 !important; border: 1.5px solid #d5dbe8 !important; border-radius: 12px !important; }
+    
+    .explanation-wrap { background: #f7f9fc; border-radius: 14px; border: 1.5px solid #dde3f0; padding: 18px 20px; margin-top: 15px; }
     .explanation-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2a6bcd; margin-bottom: 8px; }
     .explanation-body { font-size: 16px; line-height: 1.65; color: #1e2d40; }
     </style>
 """, unsafe_allow_html=True)
 
-
-# ——— სტატისტიკის ფუნქციები ———
-STATS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quiz_stats")
-
-def load_stats():
-    with shelve.open(STATS_FILE) as db:
-        return {"sessions": db.get("sessions", []), "question_wrong_counts": db.get("question_wrong_counts", {})}
-
-def save_session_stats(correct, wrong, total, score, wrong_indices):
-    with shelve.open(STATS_FILE) as db:
-        sessions = db.get("sessions", [])
-        sessions.append({"date": datetime.now().strftime("%d/%m/%Y %H:%M"), "correct": correct, "wrong": wrong, "total": total, "score": round(score, 1)})
-        db["sessions"] = sessions[-20:]
-        q_wrong = db.get("question_wrong_counts", {})
-        for idx in wrong_indices:
-            key = str(idx + 1)
-            q_wrong[key] = q_wrong.get(key, 0) + 1
-        db["question_wrong_counts"] = q_wrong
-
-def clear_stats():
-    with shelve.open(STATS_FILE) as db:
-        db["sessions"] = []
-        db["question_wrong_counts"] = {}
-
-# ——— კითხვების ჩატვირთვა ———
-@st.cache_data
+# ——— ფუნქციები ———
 def load_quiz_data():
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(current_dir, "questions.json")
+    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "questions.json")
     if os.path.exists(json_path):
         with open(json_path, "r", encoding="utf-8", errors="ignore") as file: return json.load(file)
     return []
@@ -76,10 +36,7 @@ quiz_data = load_quiz_data()
 
 # ——— session_state ———
 if "quiz_started" not in st.session_state:
-    st.session_state.update({
-        "quiz_started": False, "current_idx": 0, "correct_count": 0, "wrong_count": 0,
-        "wrong_indices": [], "has_responded": False, "user_choice": None, "option_order_map": {}, "auto_advance_flash": False
-    })
+    st.session_state.update({"quiz_started": False, "current_idx": 0, "correct_count": 0, "wrong_count": 0, "has_responded": False, "user_choice": None, "option_order_map": {}})
 
 # ——— საწყისი ეკრანი ———
 if not st.session_state.quiz_started:
@@ -100,11 +57,10 @@ if current_idx < len(active_indices):
     q_data = quiz_data[real_idx]
     options = q_data.get("options", [])
     
-    # 1. ნომრის გამოჩენა
     st.markdown(f'<p style="font-size:13px; color:#8a93a6;">კითხვა {current_idx + 1} / {len(active_indices)} &nbsp;·&nbsp; ბაზა #{real_idx + 1}</p>', unsafe_allow_html=True)
     st.info(q_data["question"])
 
-    # ლოგიკა დაფლეთილი პასუხებისთვის
+    # პასუხების დალაგება
     if current_idx not in st.session_state.option_order_map:
         order = list(range(len(options)))
         random.shuffle(order)
@@ -116,16 +72,17 @@ if current_idx < len(active_indices):
         if str(opt).strip() == str(q_data["correct_answer"]).strip():
             correct_idx = i
             break
-            
-    # პასუხის ფერის ლოგიკა
+    
+    shuffled_correct_pos = order.index(correct_idx) + 1
+
+    # ფერების ლოგიკა (თუ უკვე მონიშნულია)
     if st.session_state.has_responded:
-        correct_pos = order.index(correct_idx) + 1
-        chosen_pos = st.session_state.user_choice + 1
         color_css = f"""<style>
-            div[data-testid="stVerticalBlock"] > div:nth-child({correct_pos}) button {{ background: #dcfce7 !important; border-color: #22c55e !important; }}
+            div[data-testid="stVerticalBlock"] > div:nth-child({shuffled_correct_pos}) button {{ background: #dcfce7 !important; border-color: #22c55e !important; }}
         """
         if st.session_state.user_choice != order.index(correct_idx):
-            color_css += f'div[data-testid="stVerticalBlock"] > div:nth-child({chosen_pos}) button {{ background: #fee2e2 !important; border-color: #ef4444 !important; }}'
+            wrong_pos = st.session_state.user_choice + 1
+            color_css += f'div[data-testid="stVerticalBlock"] > div:nth-child({wrong_pos}) button {{ background: #fee2e2 !important; border-color: #ef4444 !important; }}'
         st.markdown(color_css + "</style>", unsafe_allow_html=True)
 
     # ღილაკები
@@ -133,17 +90,26 @@ if current_idx < len(active_indices):
         if st.button(options[orig_idx], key=f"btn_{i}", disabled=st.session_state.has_responded, use_container_width=True):
             st.session_state.has_responded = True
             st.session_state.user_choice = i
-            if i == order.index(correct_idx): st.session_state.correct_count += 1
-            else: 
+            
+            # ლოგიკა: სწორია თუ არასწორი
+            if i == order.index(correct_idx):
+                st.session_state.correct_count += 1
+                # მოკლე პაუზა რომ მწვანე დაინახოს მომხმარებელმა
+                time.sleep(0.8)
+                st.session_state.current_idx += 1
+                st.session_state.has_responded = False
+                st.session_state.user_choice = None
+            else:
                 st.session_state.wrong_count += 1
-                st.session_state.wrong_indices.append(real_idx)
             st.rerun()
 
-    if st.session_state.has_responded:
-        st.markdown(f'<div class="explanation-wrap"><div class="explanation-label">💡 განმარტება</div><div class="explanation-body">{q_data.get("explanation", "...")}</div></div>', unsafe_allow_html=True)
+    # განმარტება მხოლოდ არასწორ პასუხზე
+    if st.session_state.has_responded and st.session_state.user_choice != order.index(correct_idx):
+        st.markdown(f'<div class="explanation-wrap"><div class="explanation-label">💡 სამედიცინო განმარტება</div><div class="explanation-body">{q_data.get("explanation", "განმარტება არ არის.")}</div></div>', unsafe_allow_html=True)
         if st.button("შემდეგი კითხვა →", type="primary", use_container_width=True):
             st.session_state.current_idx += 1
             st.session_state.has_responded = False
+            st.session_state.user_choice = None
             st.rerun()
 else:
     st.write(f"## ტესტი დასრულდა! შედეგი: {st.session_state.correct_count}/{len(active_indices)}")
