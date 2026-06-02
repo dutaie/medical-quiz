@@ -47,6 +47,8 @@ st.markdown("""
         border-radius: 14px !important;
         padding: 18px 20px !important;
     }
+    
+    /* შესწორებული სტილი, რომელიც უზრუნველყოფს ტექსტის ხილვადობას */
     .stAlert p, .stAlert span, .stAlert li, .stAlert div {
         font-size: 18px !important;
         font-weight: 500 !important;
@@ -54,7 +56,6 @@ st.markdown("""
         color: #1a2845 !important;
         font-family: 'Noto Sans Georgian', sans-serif !important;
     }
-    
     .stAlert ol, .stAlert ul {
         margin-top: 8px !important;
         margin-bottom: 8px !important;
