@@ -7,14 +7,12 @@ st.set_page_config(page_title="სამედიცინო ტესტებ
 
 st.markdown("""
     <style>
-    /* ——— Google Font ——— */
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap');
 
     html, body, [class*="css"] {
         font-family: 'Noto Sans Georgian', sans-serif !important;
     }
 
-    /* ——— Layout spacing ——— */
     .block-container {
         padding-top: 1.25rem !important;
         padding-bottom: 1.5rem !important;
@@ -26,7 +24,6 @@ st.markdown("""
         background: transparent !important;
     }
 
-    /* ——— პროგრესბარი ——— */
     .stProgress > div > div {
         height: 6px !important;
         border-radius: 99px !important;
@@ -39,7 +36,6 @@ st.markdown("""
         background: #e8edf5 !important;
     }
 
-    /* ——— კითხვის ბლოკი (st.info) ——— */
     div[data-testid="stAlert"][kind="info"],
     div[data-baseweb="notification"] {
         background: #eef4ff !important;
@@ -56,7 +52,6 @@ st.markdown("""
         font-family: 'Noto Sans Georgian', sans-serif !important;
     }
 
-    /* ——— პასუხის ღილაკები (secondary) ——— */
     div.stButton > button[kind="secondary"] {
         font-family: 'Noto Sans Georgian', sans-serif !important;
         font-size: 16px !important;
@@ -91,7 +86,6 @@ st.markdown("""
         color: #0f1e35 !important;
     }
 
-    /* გათიშული ღილაკი (პასუხის შემდეგ) */
     div.stButton > button[kind="secondary"]:disabled {
         background: #f9fafb !important;
         border-color: #e0e4ed !important;
@@ -99,10 +93,6 @@ st.markdown("""
         opacity: 1 !important;
     }
 
-    /* ——— სწორი / შეცდომა — ფერები CSS nth-child-ით ——— */
-    /* (დინამიური ოვერრაიდები Python-იდან უცვლელია, ამ კლასი უბრალოდ ბაზაა) */
-
-    /* ——— განმარტების ბლოკი ——— */
     .explanation-wrap {
         background: #f7f9fc;
         border-radius: 14px;
@@ -126,7 +116,6 @@ st.markdown("""
         font-family: 'Noto Sans Georgian', sans-serif;
     }
 
-    /* ——— "შემდეგი" და "დაწყება" ——— */
     div.stButton > button[kind="primary"] {
         font-family: 'Noto Sans Georgian', sans-serif !important;
         font-size: 16px !important;
@@ -145,7 +134,6 @@ st.markdown("""
         background: #1d56b0 !important;
     }
 
-    /* ——— მეტრიკები (შედეგების ეკრანი) ——— */
     div[data-testid="stMetric"] {
         background: #f4f7ff !important;
         border-radius: 14px !important;
@@ -166,14 +154,12 @@ st.markdown("""
         text-align: center !important;
     }
 
-    /* ——— number_input ——— */
     input[type="number"] {
         font-family: 'Noto Sans Georgian', sans-serif !important;
         font-size: 16px !important;
         border-radius: 10px !important;
     }
 
-    /* ——— section label (st.write h3) ——— */
     h3 {
         font-family: 'Noto Sans Georgian', sans-serif !important;
         font-size: 18px !important;
@@ -182,7 +168,6 @@ st.markdown("""
         margin-bottom: 4px !important;
     }
 
-    /* ——— შეცდომების ბლოკი (შედეგები) ——— */
     .error-block {
         background: #fff2f2;
         border-left: 4px solid #e53935;
@@ -199,7 +184,6 @@ st.markdown("""
         line-height: 1.55;
     }
 
-    /* ——— მობილურისა და ტაბლეტის ოპტიმიზაცია ——— */
     @media (max-width: 600px) {
         .block-container { padding-left: 12px !important; padding-right: 12px !important; }
         .stAlert p, .stAlert span { font-size: 16px !important; }
@@ -236,12 +220,15 @@ if "quiz_started" not in st.session_state:
     st.session_state.current_idx = 0
     st.session_state.correct_count = 0
     st.session_state.wrong_count = 0
-    st.session_state.wrong_indices = []
+    st.session_state.wrong_indices = []       # ამ run-ის შეცდომები
     st.session_state.review_mode = False
+    st.session_state.review_round = 0         # რომელ ტური გადახედვაშია
     st.session_state.active_indices = []
     st.session_state.has_responded = False
     st.session_state.user_choice = None
     st.session_state.auto_advance_flash = False
+    # review-ის დროს ახალი შეცდომები ცალკე ინახება
+    st.session_state.review_wrong_indices = []
 
 # ——— საწყისი ეკრანი ———
 if not st.session_state.quiz_started:
@@ -301,7 +288,12 @@ if current_idx < len(active_indices):
     real_idx = active_indices[current_idx]
     q_data = quiz_data[real_idx]
 
-    mode_txt = " · შეცდომების გადახედვა" if st.session_state.review_mode else ""
+    if st.session_state.review_mode:
+        round_num = st.session_state.review_round
+        mode_txt = f" · გადახედვა #{round_num}"
+    else:
+        mode_txt = ""
+
     st.markdown(
         f'<p style="font-size:13px; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif; margin-bottom:6px;">'
         f'კითხვა {current_idx + 1} / {len(active_indices)}{mode_txt} &nbsp;·&nbsp; ბაზა #{real_idx + 1}</p>',
@@ -342,9 +334,9 @@ if current_idx < len(active_indices):
         color_override += "</style>"
         st.markdown(color_override, unsafe_allow_html=True)
 
-    # ავტომატური გადასვლა სწორ პასუხზე
+    # ——— სწორ პასუხზე: გამწვანებული ველი ჩანს 1.2 წამი, შემდეგ გადადის ———
     if st.session_state.auto_advance_flash:
-        time.sleep(0.4)
+        time.sleep(1.2)
         st.session_state.current_idx += 1
         st.session_state.has_responded = False
         st.session_state.user_choice = None
@@ -364,17 +356,23 @@ if current_idx < len(active_indices):
                 st.session_state.user_choice = idx
 
                 if idx == correct_idx:
+                    # სწორი — მხოლოდ პირვანდელ ტესტზე ვთვლით ქულებს
                     if not st.session_state.review_mode:
                         st.session_state.correct_count += 1
                     st.session_state.auto_advance_flash = True
                 else:
+                    # შეცდომა — ვიმახსოვრებთ სად
                     if not st.session_state.review_mode:
                         st.session_state.wrong_count += 1
                         if real_idx not in st.session_state.wrong_indices:
                             st.session_state.wrong_indices.append(real_idx)
+                    else:
+                        # review-ის დროს ახალ შეცდომებს ვაგროვებთ ცალკე
+                        if real_idx not in st.session_state.review_wrong_indices:
+                            st.session_state.review_wrong_indices.append(real_idx)
                 st.rerun()
 
-    # განმარტება შეცდომაზე
+    # განმარტება — ჩანს მხოლოდ შეცდომაზე (სწორზე ელოდება auto_advance)
     if st.session_state.has_responded and not st.session_state.auto_advance_flash:
         st.markdown(f"""
             <div class="explanation-wrap">
@@ -391,12 +389,14 @@ if current_idx < len(active_indices):
             st.rerun()
 
 else:
-    # ——— შედეგების ეკრანი ———
-    st.balloons()
-    st.write("## 📊 ტესტირების შედეგები")
-    st.write("")
+    # ——— შედეგების / გადახედვის ეკრანი ———
 
     if not st.session_state.review_mode:
+        # პირვანდელი ტესტის შედეგი
+        st.balloons()
+        st.write("## 📊 ტესტირების შედეგები")
+        st.write("")
+
         total = st.session_state.correct_count + st.session_state.wrong_count
         score = (st.session_state.correct_count / total) * 100 if total > 0 else 0
 
@@ -404,7 +404,6 @@ else:
         col1.metric("სწორი", f"✅ {st.session_state.correct_count}")
         col2.metric("შეცდომა", f"❌ {st.session_state.wrong_count}")
         col3.metric("შედეგი", f"{score:.1f}%")
-
         st.write("")
 
         if score >= 80:
@@ -436,19 +435,59 @@ else:
 
             if st.button("❌ შეცდომების ხელახლა გავლა", type="primary", use_container_width=True):
                 st.session_state.review_mode = True
+                st.session_state.review_round = 1
                 st.session_state.active_indices = list(st.session_state.wrong_indices)
+                st.session_state.review_wrong_indices = []
                 st.session_state.current_idx = 0
                 st.session_state.has_responded = False
                 st.session_state.user_choice = None
                 st.rerun()
+        else:
+            st.markdown(
+                '<div style="background:#f0fdf4; border-radius:12px; padding:14px 18px; border:1.5px solid #bbf7d0; margin-bottom:16px;">'
+                '<p style="color:#15803d; font-weight:600; font-size:16px; margin:0; font-family:\'Noto Sans Georgian\',sans-serif;">🎉 ყველა კითხვა სწორად გიპასუხიათ!</p></div>',
+                unsafe_allow_html=True
+            )
 
         st.write("")
+
     else:
-        st.markdown(
-            '<div style="background:#f0fdf4; border-radius:12px; padding:16px 20px; border:1.5px solid #bbf7d0; margin-bottom:16px;">'
-            '<p style="color:#15803d; font-weight:600; font-size:17px; margin:0; font-family:\'Noto Sans Georgian\',sans-serif;">🎉 ყველა შეცდომა გადახედილია!</p></div>',
-            unsafe_allow_html=True
-        )
+        # ——— გადახედვის ტური დასრულდა ———
+        round_num = st.session_state.review_round
+        new_wrong = st.session_state.review_wrong_indices
+
+        if not new_wrong:
+            # ყველა სწორად გაიარა — დასრულება
+            st.balloons()
+            st.markdown(
+                f'<div style="background:#f0fdf4; border-radius:14px; padding:20px 22px; border:1.5px solid #bbf7d0; margin-bottom:20px;">'
+                f'<p style="color:#15803d; font-weight:700; font-size:18px; margin:0 0 6px; font-family:\'Noto Sans Georgian\',sans-serif;">🎉 ყველა შეცდომა გასწორდა!</p>'
+                f'<p style="color:#166534; font-size:14px; margin:0; font-family:\'Noto Sans Georgian\',sans-serif;">'
+                f'გადახედვის {round_num} ტური დასჭირდა.</p>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            # კიდევ არის შეცდომები — შემოთავაზება ახლის გავლაზე
+            wrong_nums = [str(i + 1) for i in new_wrong]
+            st.markdown(
+                f'<div style="background:#fffbeb; border-radius:14px; padding:18px 20px; border:1.5px solid #fde68a; margin-bottom:16px;">'
+                f'<p style="color:#92400e; font-weight:700; font-size:17px; margin:0 0 6px; font-family:\'Noto Sans Georgian\',sans-serif;">'
+                f'გადახედვის #{round_num} ტური დასრულდა</p>'
+                f'<p style="color:#78350f; font-size:14px; margin:0; font-family:\'Noto Sans Georgian\',sans-serif;">'
+                f'კიდევ {len(new_wrong)} კითხვა შეცდომით: {", ".join(wrong_nums)}</p>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+
+            if st.button(f"🔁 კიდევ ერთი ტური ({len(new_wrong)} კითხვა)", type="primary", use_container_width=True):
+                st.session_state.review_round += 1
+                st.session_state.active_indices = list(new_wrong)
+                st.session_state.review_wrong_indices = []
+                st.session_state.current_idx = 0
+                st.session_state.has_responded = False
+                st.session_state.user_choice = None
+                st.rerun()
 
     if st.button("🔄 თავიდან დაწყება", use_container_width=True):
         st.session_state.clear()
