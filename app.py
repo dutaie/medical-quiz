@@ -3,105 +3,219 @@ import json
 import os
 import time
 
-# 1. გვერდის ბაზისური კონფიგურაცია
 st.set_page_config(page_title="სამედიცინო ტესტები", page_icon="🧬", layout="centered")
 
-# 2. სუფთა და მკაცრი CSS სტილები (მარცხნივ გასწორება, ზედა მარჟინების მოკვლა და მაღალი კითხვითობა)
 st.markdown("""
     <style>
-    /* აპლიკაციის ზედა ცარიელი სივრცის (Padding) მინიმიზაცია */
-    .block-container {
-        padding-top: 1.5rem !important;
-        padding-bottom: 0rem !important;
+    /* ——— Google Font ——— */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Noto Sans Georgian', sans-serif !important;
     }
-    
-    /* ჰედერის (ზედა თეთრი ზოლის) სიმაღლის განულება */
+
+    /* ——— Layout spacing ——— */
+    .block-container {
+        padding-top: 1.25rem !important;
+        padding-bottom: 1.5rem !important;
+        max-width: 680px !important;
+    }
+
     header[data-testid="stHeader"] {
-        height: 0px !important;
+        height: 0 !important;
         background: transparent !important;
     }
 
-    /* კითხვის დიდი ბარათი */
-    .stAlert p {
-        font-size: 21px !important;
-        font-weight: 600 !important;
-        line-height: 1.6 !important;
-        color: #1e293b !important;
+    /* ——— პროგრესბარი ——— */
+    .stProgress > div > div {
+        height: 6px !important;
+        border-radius: 99px !important;
     }
-    
-    /* პასუხების ღილაკების საწყისი დიზაინი - მკაცრად მარცხნიდან! */
-    div.stButton > button[kind="secondary"] {
-        font-size: 18px !important;
-        text-align: left !important;
-        justify-content: flex-start !important;
-        align-items: center !important;
-        display: flex !important;
-        width: 100% !important;
-        padding: 16px 22px !important;
-        background-color: #ffffff !important;
-        color: #334155 !important;
-        border: 2px solid #e2e8f0 !important;
-        border-radius: 12px !important;
-        white-space: normal !important;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02) !important;
+    .stProgress > div > div > div {
+        background: #2a6bcd !important;
+        border-radius: 99px !important;
     }
-    
-    /* იძულებითი მარცხნივ გასწორება შიდა ტექსტებისთვის */
-    div.stButton > button[kind="secondary"] div[data-testid="stMarkdownContainer"] p {
-        text-align: left !important;
-        justify-content: flex-start !important;
-        width: 100% !important;
-        margin: 0 !important;
-    }
-    
-    /* მაუსის მიტანის ეფექტი */
-    div.stButton > button[kind="secondary"]:hover {
-        background-color: #f8fafc !important;
-        border-color: #cbd5e1 !important;
-        color: #0f172a !important;
+    .stProgress > div > div {
+        background: #e8edf5 !important;
     }
 
-    /* გათიშული ღილაკების მყარი ვიზუალი (სტრიმლიტს ვუკრძალავთ გათეთრებას) */
+    /* ——— კითხვის ბლოკი (st.info) ——— */
+    div[data-testid="stAlert"][kind="info"],
+    div[data-baseweb="notification"] {
+        background: #eef4ff !important;
+        border: none !important;
+        border-left: 4px solid #2a6bcd !important;
+        border-radius: 14px !important;
+        padding: 18px 20px !important;
+    }
+    .stAlert p, .stAlert span {
+        font-size: 18px !important;
+        font-weight: 500 !important;
+        line-height: 1.6 !important;
+        color: #1a2845 !important;
+        font-family: 'Noto Sans Georgian', sans-serif !important;
+    }
+
+    /* ——— პასუხის ღილაკები (secondary) ——— */
+    div.stButton > button[kind="secondary"] {
+        font-family: 'Noto Sans Georgian', sans-serif !important;
+        font-size: 16px !important;
+        font-weight: 400 !important;
+        text-align: left !important;
+        justify-content: flex-start !important;
+        align-items: flex-start !important;
+        display: flex !important;
+        width: 100% !important;
+        min-height: 52px !important;
+        padding: 13px 18px !important;
+        background: #ffffff !important;
+        color: #1e2d40 !important;
+        border: 1.5px solid #d5dbe8 !important;
+        border-radius: 12px !important;
+        white-space: normal !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+        transition: border-color 0.15s, background 0.15s !important;
+    }
+
+    div.stButton > button[kind="secondary"] div[data-testid="stMarkdownContainer"] p {
+        text-align: left !important;
+        width: 100% !important;
+        margin: 0 !important;
+        font-size: 16px !important;
+        line-height: 1.55 !important;
+    }
+
+    div.stButton > button[kind="secondary"]:hover {
+        background: #f4f7ff !important;
+        border-color: #2a6bcd !important;
+        color: #0f1e35 !important;
+    }
+
+    /* გათიშული ღილაკი (პასუხის შემდეგ) */
     div.stButton > button[kind="secondary"]:disabled {
-        background-color: #f8fafc !important;
-        border-color: #e2e8f0 !important;
-        color: #94a3b8 !important;
+        background: #f9fafb !important;
+        border-color: #e0e4ed !important;
+        color: #8a93a6 !important;
         opacity: 1 !important;
     }
-    
-    /* ახალი, სუფთა და მაღალკონტრასტული განმარტების ბლოკი */
-    .custom-explanation {
-        background-color: #f8fafc !important;
-        border-left: 6px solid #2563eb !important;
-        padding: 20px !important;
-        border-radius: 8px !important;
-        margin-top: 20px !important;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+
+    /* ——— სწორი / შეცდომა — ფერები CSS nth-child-ით ——— */
+    /* (დინამიური ოვერრაიდები Python-იდან უცვლელია, ამ კლასი უბრალოდ ბაზაა) */
+
+    /* ——— განმარტების ბლოკი ——— */
+    .explanation-wrap {
+        background: #f7f9fc;
+        border-radius: 14px;
+        border: 1.5px solid #dde3f0;
+        padding: 18px 20px;
+        margin-top: 4px;
     }
-    
-    .custom-explanation-title {
-        font-size: 19px !important;
-        font-weight: 700 !important;
-        color: #1e3a8a !important;
-        margin-bottom: 8px !important;
+    .explanation-label {
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: #2a6bcd;
+        margin-bottom: 8px;
+        font-family: 'Noto Sans Georgian', sans-serif;
     }
-    
-    .custom-explanation-text {
-        font-size: 18px !important;
-        line-height: 1.6 !important;
-        color: #1e293b !important;
+    .explanation-body {
+        font-size: 16px;
+        line-height: 1.65;
+        color: #1e2d40;
+        font-family: 'Noto Sans Georgian', sans-serif;
     }
-    
-    /* ქვედა "შემდეგი" და "დაწყების" ღილაკები */
+
+    /* ——— "შემდეგი" და "დაწყება" ——— */
     div.stButton > button[kind="primary"] {
-        font-size: 18px !important;
-        padding: 14px 28px !important;
+        font-family: 'Noto Sans Georgian', sans-serif !important;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        padding: 14px 24px !important;
+        border-radius: 12px !important;
+        background: #2a6bcd !important;
+        color: #ffffff !important;
+        border: none !important;
+        width: 100% !important;
+        letter-spacing: 0.01em !important;
+        box-shadow: 0 2px 8px rgba(42,107,205,0.25) !important;
+        transition: background 0.15s !important;
+    }
+    div.stButton > button[kind="primary"]:hover {
+        background: #1d56b0 !important;
+    }
+
+    /* ——— მეტრიკები (შედეგების ეკრანი) ——— */
+    div[data-testid="stMetric"] {
+        background: #f4f7ff !important;
+        border-radius: 14px !important;
+        padding: 16px !important;
+        border: 1px solid #dde3f0 !important;
+        text-align: center !important;
+    }
+    div[data-testid="stMetricLabel"] p {
+        font-size: 13px !important;
+        font-family: 'Noto Sans Georgian', sans-serif !important;
+        color: #5a6a85 !important;
+        text-align: center !important;
+    }
+    div[data-testid="stMetricValue"] {
+        font-size: 26px !important;
+        font-weight: 700 !important;
+        color: #1a2845 !important;
+        text-align: center !important;
+    }
+
+    /* ——— number_input ——— */
+    input[type="number"] {
+        font-family: 'Noto Sans Georgian', sans-serif !important;
+        font-size: 16px !important;
         border-radius: 10px !important;
+    }
+
+    /* ——— section label (st.write h3) ——— */
+    h3 {
+        font-family: 'Noto Sans Georgian', sans-serif !important;
+        font-size: 18px !important;
+        font-weight: 600 !important;
+        color: #1a2845 !important;
+        margin-bottom: 4px !important;
+    }
+
+    /* ——— შეცდომების ბლოკი (შედეგები) ——— */
+    .error-block {
+        background: #fff2f2;
+        border-left: 4px solid #e53935;
+        border-radius: 12px;
+        padding: 16px 18px;
+        margin-bottom: 16px;
+    }
+    .error-block p {
+        font-size: 15px;
+        font-weight: 600;
+        color: #991b1b;
+        margin: 0;
+        font-family: 'Noto Sans Georgian', sans-serif;
+        line-height: 1.55;
+    }
+
+    /* ——— მობილურისა და ტაბლეტის ოპტიმიზაცია ——— */
+    @media (max-width: 600px) {
+        .block-container { padding-left: 12px !important; padding-right: 12px !important; }
+        .stAlert p, .stAlert span { font-size: 16px !important; }
+        div.stButton > button[kind="secondary"] { font-size: 15px !important; padding: 12px 14px !important; }
+        div.stButton > button[kind="primary"] { font-size: 15px !important; }
+        .explanation-body { font-size: 15px !important; }
+        div[data-testid="stMetricValue"] { font-size: 22px !important; }
+    }
+
+    @media (min-width: 601px) and (max-width: 1024px) {
+        .block-container { padding-left: 24px !important; padding-right: 24px !important; }
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. JSON მონაცემების ჩატვირთვა
+
 @st.cache_data
 def load_quiz_data():
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -117,7 +231,6 @@ if not quiz_data:
     st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
     st.stop()
 
-# 4. სესიის ცვლადების მართვა
 if "quiz_started" not in st.session_state:
     st.session_state.quiz_started = False
     st.session_state.current_idx = 0
@@ -130,70 +243,97 @@ if "quiz_started" not in st.session_state:
     st.session_state.user_choice = None
     st.session_state.auto_advance_flash = False
 
-# 4.5 საწყისი დიაპაზონის ასარჩევი მენიუ
+# ——— საწყისი ეკრანი ———
 if not st.session_state.quiz_started:
     total_questions = len(quiz_data)
-    st.write("### ⚙️ აირჩიეთ კითხვების დიაპაზონი")
-    st.write(f"ბაზაში სულ მოიძებნა **{total_questions}** კითხვა.")
-    
+
+    st.markdown("""
+        <div style="
+            background: linear-gradient(135deg, #1a2845 0%, #2a6bcd 100%);
+            border-radius: 18px;
+            padding: 28px 24px;
+            margin-bottom: 24px;
+            text-align: center;
+        ">
+            <div style="font-size: 36px; margin-bottom: 10px;">🧬</div>
+            <div style="font-size: 22px; font-weight: 700; color: #ffffff; font-family: 'Noto Sans Georgian', sans-serif; margin-bottom: 6px;">
+                სამედიცინო ტესტები
+            </div>
+            <div style="font-size: 14px; color: rgba(255,255,255,0.75); font-family: 'Noto Sans Georgian', sans-serif;">
+                ბაზაში სულ <strong style="color:#fff">{total}</strong> კითხვა
+            </div>
+        </div>
+    """.replace("{total}", str(total_questions)), unsafe_allow_html=True)
+
+    st.write("### ⚙️ კითხვების დიაპაზონი")
+
     col1, col2 = st.columns(2)
     with col1:
-        start_q = st.number_input("რომელი კითხვიდან:", min_value=1, max_value=total_questions, value=1, step=1)
+        start_q = st.number_input("საიდან:", min_value=1, max_value=total_questions, value=1, step=1)
     with col2:
-        end_q = st.number_input("რომელ კითხვამდე:", min_value=1, max_value=total_questions, value=min(20, total_questions), step=1)
-        
+        end_q = st.number_input("სად მდე:", min_value=1, max_value=total_questions, value=min(20, total_questions), step=1)
+
     if start_q > end_q:
-        st.markdown('<p style="color: #ef4444; font-weight: 600;">⚠️ საწყისი კითხვა არ უნდა იყოს საბოლოოზე მეტი!</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p style="color:#dc2626; font-weight:600; font-size:14px; margin-top:6px;">'
+            '⚠️ საწყისი კითხვა საბოლოოზე მეტია!</p>',
+            unsafe_allow_html=True
+        )
     else:
-        st.write("")
+        q_count = end_q - start_q + 1
+        st.markdown(
+            f'<p style="color:#5a6a85; font-size:14px; margin: 8px 0 16px; font-family:\'Noto Sans Georgian\',sans-serif;">'
+            f'შეირჩა <strong style="color:#2a6bcd">{q_count}</strong> კითხვა</p>',
+            unsafe_allow_html=True
+        )
         if st.button("🚀 ტესტირების დაწყება", type="primary", use_container_width=True):
-            # მომხმარებლის 1-ზე დაფუძნებული ინდექსები გადაგვყავს პითონის 0-ზე დაფუძნებულ ინდექსებში
             st.session_state.active_indices = list(range(start_q - 1, end_q))
             st.session_state.quiz_started = True
             st.rerun()
-    st.stop() # აჩერებს კოდს, სანამ ღილაკს არ დააჭერენ
+    st.stop()
 
-# მონაცემების მინიჭება დიაპაზონის მიხედვით
+
 active_indices = st.session_state.active_indices
 current_idx = st.session_state.current_idx
 
-# 5. ტესტირების აქტიური ფაზა
+# ——— კითხვის ეკრანი ———
 if current_idx < len(active_indices):
     real_idx = active_indices[current_idx]
     q_data = quiz_data[real_idx]
-    
-    # პროგრესბარი (აჩვენებს მიმდინარე პროგრესს არჩეულ დიაპაზონში)
-    mode_txt = " (შეცდომების გადახედვა)" if st.session_state.review_mode else ""
-    st.write(f"### კითხვა {current_idx + 1} / {len(active_indices)}{mode_txt} *(ბაზაში: #{real_idx + 1})*")
+
+    mode_txt = " · შეცდომების გადახედვა" if st.session_state.review_mode else ""
+    st.markdown(
+        f'<p style="font-size:13px; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif; margin-bottom:6px;">'
+        f'კითხვა {current_idx + 1} / {len(active_indices)}{mode_txt} &nbsp;·&nbsp; ბაზა #{real_idx + 1}</p>',
+        unsafe_allow_html=True
+    )
     st.progress((current_idx + 1) / len(active_indices))
-    
-    # კითხვის ჩვენება
+    st.write("")
+
     st.info(q_data["question"])
     st.write("")
-    
+
     options = q_data["options"]
     correct_idx = q_data["correct"]
-    
-    # დინამიური ფერები პასუხის გაცემის შემდეგ
+
+    # ფერების ოვერრაიდი პასუხის შემდეგ
     if st.session_state.has_responded:
         correct_child = correct_idx + 1
         chosen_child = st.session_state.user_choice + 1
-        
+
         color_override = f"""
         <style>
-        /* სწორი ვარიანტი ყოველთვის მწვანდება */
         div[data-testid="stVerticalBlock"] > div:nth-child({correct_child}) button[kind="secondary"]:disabled {{
-            background-color: #dcfce7 !important;
+            background: #f0fdf4 !important;
             border-color: #22c55e !important;
             color: #15803d !important;
             font-weight: 600 !important;
         }}
         """
-        # თუ არასწორია, ის წითლდება
         if st.session_state.user_choice != correct_idx:
             color_override += f"""
             div[data-testid="stVerticalBlock"] > div:nth-child({chosen_child}) button[kind="secondary"]:disabled {{
-                background-color: #fee2e2 !important;
+                background: #fff2f2 !important;
                 border-color: #ef4444 !important;
                 color: #b91c1c !important;
                 font-weight: 600 !important;
@@ -202,23 +342,27 @@ if current_idx < len(active_indices):
         color_override += "</style>"
         st.markdown(color_override, unsafe_allow_html=True)
 
-    # მყისიერი ავტომატური გადასვლა სწორ პასუხზე
+    # ავტომატური გადასვლა სწორ პასუხზე
     if st.session_state.auto_advance_flash:
-        time.sleep(0.4) # 0.4 წამი ეფექტისთვის
+        time.sleep(0.4)
         st.session_state.current_idx += 1
         st.session_state.has_responded = False
         st.session_state.user_choice = None
         st.session_state.auto_advance_flash = False
         st.rerun()
 
-    # ვარიანტების ბლოკი
     options_block = st.container()
     with options_block:
+        letters = ["ა", "ბ", "გ", "დ", "ე", "ვ"]
         for idx, option in enumerate(options):
-            if st.button(option, key=f"opt_{current_idx}_{idx}", disabled=st.session_state.has_responded, use_container_width=True):
+            letter = letters[idx] if idx < len(letters) else str(idx + 1)
+            label = f"**{letter})**  {option}"
+            if st.button(label, key=f"opt_{current_idx}_{idx}",
+                         disabled=st.session_state.has_responded,
+                         use_container_width=True):
                 st.session_state.has_responded = True
                 st.session_state.user_choice = idx
-                
+
                 if idx == correct_idx:
                     if not st.session_state.review_mode:
                         st.session_state.correct_count += 1
@@ -230,59 +374,82 @@ if current_idx < len(active_indices):
                             st.session_state.wrong_indices.append(real_idx)
                 st.rerun()
 
-    # თუ პასუხი შეცდომაა -> გამოდის ახალი, სუფთა განმარტების ბლოკი
+    # განმარტება შეცდომაზე
     if st.session_state.has_responded and not st.session_state.auto_advance_flash:
         st.markdown(f"""
-            <div class="custom-explanation">
-                <div class="custom-explanation-title">💡 სამედიცინო განმარტება:</div>
-                <div class="custom-explanation-text">{q_data["explanation"]}</div>
+            <div class="explanation-wrap">
+                <div class="explanation-label">💡 სამედიცინო განმარტება</div>
+                <div class="explanation-body">{q_data["explanation"]}</div>
             </div>
-            <br>
         """, unsafe_allow_html=True)
-        
-        if st.button("შემდეგი კითხვა ➡️", type="primary", use_container_width=True):
+        st.write("")
+
+        if st.button("შემდეგი კითხვა →", type="primary", use_container_width=True):
             st.session_state.current_idx += 1
             st.session_state.has_responded = False
             st.session_state.user_choice = None
             st.rerun()
 
 else:
-    # შედეგების ეკრანი
+    # ——— შედეგების ეკრანი ———
     st.balloons()
-    st.title("ტესტირების შედეგები 📊")
-    
+    st.write("## 📊 ტესტირების შედეგები")
+    st.write("")
+
     if not st.session_state.review_mode:
         total = st.session_state.correct_count + st.session_state.wrong_count
         score = (st.session_state.correct_count / total) * 100 if total > 0 else 0
-        
+
         col1, col2, col3 = st.columns(3)
-        col1.metric("სწორი პასუხი", f"✅ {st.session_state.correct_count}")
-        col2.metric("არასწორი პასუხი", f"❌ {st.session_state.wrong_count}")
-        col3.metric("საერთო შედეგი", f"{score:.1f}%")
-        
+        col1.metric("სწორი", f"✅ {st.session_state.correct_count}")
+        col2.metric("შეცდომა", f"❌ {st.session_state.wrong_count}")
+        col3.metric("შედეგი", f"{score:.1f}%")
+
+        st.write("")
+
+        if score >= 80:
+            st.markdown(
+                '<div style="background:#f0fdf4; border-radius:12px; padding:14px 18px; border:1.5px solid #bbf7d0; margin-bottom:16px;">'
+                '<p style="color:#15803d; font-weight:600; font-size:16px; margin:0; font-family:\'Noto Sans Georgian\',sans-serif;">🎉 შესანიშნავი შედეგი!</p></div>',
+                unsafe_allow_html=True
+            )
+        elif score >= 60:
+            st.markdown(
+                '<div style="background:#fffbeb; border-radius:12px; padding:14px 18px; border:1.5px solid #fde68a; margin-bottom:16px;">'
+                '<p style="color:#92400e; font-weight:600; font-size:16px; margin:0; font-family:\'Noto Sans Georgian\',sans-serif;">👍 კარგი შედეგი, გააგრძელეთ!</p></div>',
+                unsafe_allow_html=True
+            )
+        else:
+            st.markdown(
+                '<div style="background:#fff2f2; border-radius:12px; padding:14px 18px; border:1.5px solid #fecaca; margin-bottom:16px;">'
+                '<p style="color:#991b1b; font-weight:600; font-size:16px; margin:0; font-family:\'Noto Sans Georgian\',sans-serif;">📚 კიდევ ვარჯიში გჭირდებათ!</p></div>',
+                unsafe_allow_html=True
+            )
+
         if st.session_state.wrong_indices:
-            # აქაც ბაზის რეალური ნომრები რომ აჩვენოს მომხმარებელს (+1)
             wrong_nums = [str(i + 1) for i in st.session_state.wrong_indices]
-            
-            # მაღალკონტრასტული შეცდომების ბლოკი
             st.markdown(f"""
-                <div style="background-color: #fef2f2; border-left: 6px solid #ef4444; padding: 18px; border-radius: 10px; margin-bottom: 20px;">
-                    <p style="font-size: 18px; color: #991b1b; font-weight: 600; margin: 0; text-align: left;">
-                        ❌ კითხვები, სადაც შეგეშალათ (ნომრები ბაზიდან): [ {', '.join(wrong_nums)} ]
-                    </p>
+                <div class="error-block">
+                    <p>❌ შეცდომები (ბაზის ნომრები): {', '.join(wrong_nums)}</p>
                 </div>
             """, unsafe_allow_html=True)
-            
-            if st.button("❌ მხოლოდ შეცდომების ხელახლა გავლა", type="primary", use_container_width=True):
+
+            if st.button("❌ შეცდომების ხელახლა გავლა", type="primary", use_container_width=True):
                 st.session_state.review_mode = True
                 st.session_state.active_indices = list(st.session_state.wrong_indices)
                 st.session_state.current_idx = 0
                 st.session_state.has_responded = False
                 st.session_state.user_choice = None
                 st.rerun()
+
+        st.write("")
     else:
-        st.success("🎉 თქვენ წარმატებით გადახედეთ ყველა შეცდომას!")
-        
-    if st.button("🔄 თავიდან დაწყება (ახალი დიაპაზონი)", use_container_width=True):
+        st.markdown(
+            '<div style="background:#f0fdf4; border-radius:12px; padding:16px 20px; border:1.5px solid #bbf7d0; margin-bottom:16px;">'
+            '<p style="color:#15803d; font-weight:600; font-size:17px; margin:0; font-family:\'Noto Sans Georgian\',sans-serif;">🎉 ყველა შეცდომა გადახედილია!</p></div>',
+            unsafe_allow_html=True
+        )
+
+    if st.button("🔄 თავიდან დაწყება", use_container_width=True):
         st.session_state.clear()
         st.rerun()
