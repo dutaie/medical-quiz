@@ -461,12 +461,26 @@ if not st.session_state.quiz_started:
 active_indices = st.session_state.active_indices
 current_idx = st.session_state.current_idx
 
+# გარანტია: ეს ცვლადები ყოველთვის არსებობს (review-შიც)
+if "option_order_map" not in st.session_state:
+    st.session_state.option_order_map = {}
+if "stats_saved" not in st.session_state:
+    st.session_state.stats_saved = False
+if "shuffle_on" not in st.session_state:
+    st.session_state.shuffle_on = True
+if "review_wrong_indices" not in st.session_state:
+    st.session_state.review_wrong_indices = []
+if "review_round" not in st.session_state:
+    st.session_state.review_round = 0
+if "review_mode" not in st.session_state:
+    st.session_state.review_mode = False
+
 if current_idx < len(active_indices):
     real_idx = active_indices[current_idx]
     q_data = quiz_data[real_idx]
 
     # ვარიანტების shuffle — ერთხელ გენერირდება კითხვაზე და ინახება
-    shuffle_on = st.session_state.get("shuffle_on", True)
+    shuffle_on = st.session_state.shuffle_on
     if current_idx not in st.session_state.option_order_map:
         order = list(range(len(q_data["options"])))
         if shuffle_on:
