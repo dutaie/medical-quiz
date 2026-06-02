@@ -9,110 +9,763 @@ from datetime import datetime
 st.set_page_config(page_title="სამედიცინო ტესტები", page_icon="🧬", layout="centered")
 
 st.markdown("""
-    <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap');
-    html, body, [class*="css"] { font-family: 'Noto Sans Georgian', sans-serif !important; }
-    .block-container { padding-top: 1.25rem !important; padding-bottom: 1.5rem !important; max-width: 680px !important; }
-    div[data-testid="stAlert"][kind="info"] * { color: #000000 !important; font-weight: 500 !important; font-size: 18px !important; line-height: 1.6 !important; }
-    div[data-testid="stAlert"][kind="info"] { background: #eef4ff !important; border: none !important; border-left: 4px solid #2a6bcd !important; border-radius: 14px !important; padding: 18px 20px !important; }
-    header[data-testid="stHeader"] { height: 0 !important; background: transparent !important; }
-    
-    div.stButton > button[kind="secondary"] { font-family: 'Noto Sans Georgian', sans-serif !important; font-size: 16px !important; width: 100% !important; min-height: 52px !important; padding: 13px 18px !important; background: #ffffff !important; color: #1e2d40 !important; border: 1.5px solid #d5dbe8 !important; border-radius: 12px !important; }
-    
-    .explanation-wrap { background: #f7f9fc; border-radius: 14px; border: 1.5px solid #dde3f0; padding: 18px 20px; margin-top: 15px; }
-    .explanation-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #2a6bcd; margin-bottom: 8px; }
-    .explanation-body { font-size: 16px; line-height: 1.65; color: #1e2d40; }
-    </style>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Noto Sans Georgian', sans-serif !important;
+}
+
+.block-container {
+    padding-top: 1rem !important;
+    padding-bottom: 2rem !important;
+    max-width: 700px !important;
+}
+
+header[data-testid="stHeader"] { height: 0 !important; background: transparent !important; }
+
+/* ——— progress bar ——— */
+.stProgress > div > div { height: 7px !important; border-radius: 99px !important; background: #e8edf5 !important; }
+.stProgress > div > div > div { background: linear-gradient(90deg, #2a6bcd, #4f9cf9) !important; border-radius: 99px !important; transition: width 0.4s ease !important; }
+
+/* ——— კითხვის ბარათი ——— */
+.q-card {
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1.5px solid #e2e8f4;
+    padding: 22px 24px;
+    margin-bottom: 6px;
+    box-shadow: 0 2px 12px rgba(42,107,205,0.07);
+    position: relative;
+    overflow: hidden;
+}
+.q-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 5px; height: 100%;
+    background: linear-gradient(180deg, #2a6bcd, #4f9cf9);
+    border-radius: 18px 0 0 18px;
+}
+.q-card-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #2a6bcd;
+    margin-bottom: 10px;
+    font-family: 'Noto Sans Georgian', sans-serif;
+}
+.q-card-text {
+    font-size: 17px;
+    font-weight: 500;
+    line-height: 1.65;
+    color: #1a2845;
+    font-family: 'Noto Sans Georgian', sans-serif;
+}
+
+/* ——— სტატუს ბარი ——— */
+.status-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-family: 'Noto Sans Georgian', sans-serif;
+}
+.status-left { font-size: 13px; color: #8a93a6; }
+.status-right { display: flex; gap: 10px; align-items: center; }
+.status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 99px;
+    font-size: 13px;
+    font-weight: 600;
+}
+.chip-correct { background: #f0fdf4; color: #15803d; }
+.chip-wrong   { background: #fff2f2; color: #b91c1c; }
+
+/* ——— ვარიანტის ღილაკები ——— */
+div.stButton > button[kind="secondary"] {
+    font-family: 'Noto Sans Georgian', sans-serif !important;
+    font-size: 15.5px !important;
+    font-weight: 400 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    display: flex !important;
+    width: 100% !important;
+    min-height: 54px !important;
+    padding: 13px 16px !important;
+    background: #ffffff !important;
+    color: #1e2d40 !important;
+    border: 1.5px solid #e2e8f4 !important;
+    border-radius: 14px !important;
+    white-space: normal !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
+    transition: border-color 0.18s, background 0.18s, box-shadow 0.18s, transform 0.1s !important;
+    margin-bottom: 2px !important;
+}
+div.stButton > button[kind="secondary"]:hover {
+    background: #f4f7ff !important;
+    border-color: #2a6bcd !important;
+    color: #0f1e35 !important;
+    box-shadow: 0 2px 10px rgba(42,107,205,0.12) !important;
+    transform: translateY(-1px) !important;
+}
+div.stButton > button[kind="secondary"]:active {
+    transform: translateY(0px) !important;
+}
+div.stButton > button[kind="secondary"] div[data-testid="stMarkdownContainer"] p {
+    text-align: left !important;
+    width: 100% !important;
+    margin: 0 !important;
+    font-size: 15.5px !important;
+    line-height: 1.5 !important;
+}
+div.stButton > button[kind="secondary"]:disabled {
+    background: #f9fafb !important;
+    border-color: #e8edf5 !important;
+    color: #9aa3b8 !important;
+    opacity: 1 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ——— სწორი / შეცდომა — ფერები (Python nth-child override-ით) ——— */
+
+/* ——— განმარტების ბარათი ——— */
+.explanation-wrap {
+    background: #f8faff;
+    border-radius: 16px;
+    border: 1.5px solid #dde6f8;
+    padding: 20px 22px;
+    margin-top: 8px;
+    animation: fadeSlideUp 0.3s ease;
+}
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.explanation-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #2a6bcd;
+    margin-bottom: 10px;
+    font-family: 'Noto Sans Georgian', sans-serif;
+}
+.explanation-body {
+    font-size: 15.5px;
+    line-height: 1.7;
+    color: #1e2d40;
+    font-family: 'Noto Sans Georgian', sans-serif;
+}
+
+/* ——— primary ღილაკი ——— */
+div.stButton > button[kind="primary"] {
+    font-family: 'Noto Sans Georgian', sans-serif !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    padding: 14px 24px !important;
+    border-radius: 14px !important;
+    background: linear-gradient(135deg, #2a6bcd, #4f9cf9) !important;
+    color: #ffffff !important;
+    border: none !important;
+    width: 100% !important;
+    letter-spacing: 0.01em !important;
+    box-shadow: 0 3px 14px rgba(42,107,205,0.3) !important;
+    transition: box-shadow 0.2s, transform 0.15s !important;
+}
+div.stButton > button[kind="primary"]:hover {
+    box-shadow: 0 5px 20px rgba(42,107,205,0.4) !important;
+    transform: translateY(-1px) !important;
+}
+div.stButton > button[kind="primary"]:active {
+    transform: translateY(0) !important;
+}
+
+/* ——— შედეგების SVG gauge ——— */
+.result-gauge-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 8px 0 20px;
+}
+
+/* ——— შედეგების ბარათები ——— */
+.result-chips {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+}
+.result-chip {
+    flex: 1;
+    background: #f7f9fc;
+    border-radius: 16px;
+    border: 1.5px solid #e2e8f4;
+    padding: 16px 12px;
+    text-align: center;
+    font-family: 'Noto Sans Georgian', sans-serif;
+}
+.result-chip-icon { font-size: 24px; margin-bottom: 4px; }
+.result-chip-num  { font-size: 22px; font-weight: 700; color: #1a2845; }
+.result-chip-lbl  { font-size: 12px; color: #8a93a6; margin-top: 2px; }
+
+/* ——— სტატისტიკა ——— */
+.stat-card {
+    background: #f8faff;
+    border-radius: 16px;
+    border: 1.5px solid #e2e8f4;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+}
+.stat-card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #8a93a6;
+    margin-bottom: 12px;
+    font-family: 'Noto Sans Georgian', sans-serif;
+}
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid #eef0f8;
+    font-family: 'Noto Sans Georgian', sans-serif;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-row-label { font-size: 14px; color: #3a4a65; }
+.stat-row-value { font-size: 14px; font-weight: 600; color: #1a2845; }
+.weak-q-badge {
+    display: inline-block;
+    background: #fff2f2;
+    color: #b91c1c;
+    border-radius: 8px;
+    padding: 3px 9px;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin: 3px 3px;
+    font-family: 'Noto Sans Georgian', sans-serif;
+    border: 1px solid #fecaca;
+}
+
+/* ——— notification banners ——— */
+.banner {
+    border-radius: 14px;
+    padding: 15px 18px;
+    margin-bottom: 14px;
+    font-family: 'Noto Sans Georgian', sans-serif;
+    animation: fadeSlideUp 0.3s ease;
+}
+.banner-green { background:#f0fdf4; border:1.5px solid #bbf7d0; }
+.banner-yellow { background:#fffbeb; border:1.5px solid #fde68a; }
+.banner-red    { background:#fff2f2; border:1.5px solid #fecaca; }
+.banner-title  { font-size:16px; font-weight:700; margin:0 0 3px; }
+.banner-sub    { font-size:13px; margin:0; }
+.banner-green  .banner-title { color:#15803d; }
+.banner-green  .banner-sub   { color:#166534; }
+.banner-yellow .banner-title { color:#92400e; }
+.banner-yellow .banner-sub   { color:#78350f; }
+.banner-red    .banner-title { color:#b91c1c; }
+.banner-red    .banner-sub   { color:#991b1b; }
+
+/* ——— number_input, tabs ——— */
+input[type="number"] {
+    font-family: 'Noto Sans Georgian', sans-serif !important;
+    font-size: 16px !important;
+    border-radius: 10px !important;
+}
+button[data-baseweb="tab"] p {
+    font-family: 'Noto Sans Georgian', sans-serif !important;
+    font-size: 14px !important;
+}
+
+/* ——— responsive ——— */
+@media (max-width: 600px) {
+    .block-container { padding-left: 10px !important; padding-right: 10px !important; }
+    .q-card-text { font-size: 16px !important; }
+    div.stButton > button[kind="secondary"] { font-size: 14.5px !important; padding: 12px 13px !important; min-height: 50px !important; }
+    div.stButton > button[kind="primary"]   { font-size: 15px !important; }
+    .explanation-body { font-size: 15px !important; }
+    .result-chip-num  { font-size: 20px !important; }
+}
+@media (min-width: 601px) and (max-width: 1024px) {
+    .block-container { padding-left: 20px !important; padding-right: 20px !important; }
+}
+</style>
 """, unsafe_allow_html=True)
 
-# ——— ფუნქციები ———
+
+# ——— სტატისტიკის ფუნქციები ———
+STATS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "quiz_stats")
+
+def load_stats():
+    with shelve.open(STATS_FILE) as db:
+        return {
+            "sessions": db.get("sessions", []),
+            "question_wrong_counts": db.get("question_wrong_counts", {}),
+        }
+
+def save_session_stats(correct, wrong, total, score, wrong_indices):
+    with shelve.open(STATS_FILE) as db:
+        sessions = db.get("sessions", [])
+        sessions.append({
+            "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "correct": correct,
+            "wrong": wrong,
+            "total": total,
+            "score": round(score, 1),
+        })
+        db["sessions"] = sessions[-20:]
+        q_wrong = db.get("question_wrong_counts", {})
+        for idx in wrong_indices:
+            key = str(idx + 1)
+            q_wrong[key] = q_wrong.get(key, 0) + 1
+        db["question_wrong_counts"] = q_wrong
+
+def clear_stats():
+    with shelve.open(STATS_FILE) as db:
+        db["sessions"] = []
+        db["question_wrong_counts"] = {}
+
+def score_gauge_svg(score):
+    """SVG gauge შედეგის ვიზუალიზაციისთვის."""
+    pct = min(max(score, 0), 100)
+    # ფერი score-ის მიხედვით
+    if pct >= 80:
+        clr1, clr2, txt_clr = "#16a34a", "#4ade80", "#15803d"
+        emoji = "🎉"
+    elif pct >= 60:
+        clr1, clr2, txt_clr = "#d97706", "#fbbf24", "#92400e"
+        emoji = "👍"
+    else:
+        clr1, clr2, txt_clr = "#dc2626", "#f87171", "#b91c1c"
+        emoji = "📚"
+
+    r = 70
+    cx, cy = 90, 90
+    circumference = 3.14159 * r  # ნახევარი წრე
+    dash = (pct / 100) * circumference
+    gap = circumference - dash
+
+    return f"""
+    <div class="result-gauge-wrap">
+      <svg width="180" height="110" viewBox="0 0 180 110">
+        <defs>
+          <linearGradient id="ggrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="{clr1}"/>
+            <stop offset="100%" stop-color="{clr2}"/>
+          </linearGradient>
+        </defs>
+        <!-- ფონის ნახევარ-წრე -->
+        <path d="M{cx-r},{cy} A{r},{r} 0 0,1 {cx+r},{cy}"
+              fill="none" stroke="#e8edf5" stroke-width="14" stroke-linecap="round"/>
+        <!-- შევსების ნახევარ-წრე -->
+        <path d="M{cx-r},{cy} A{r},{r} 0 0,1 {cx+r},{cy}"
+              fill="none" stroke="url(#ggrad)" stroke-width="14" stroke-linecap="round"
+              stroke-dasharray="{dash:.1f} {gap:.1f}"
+              stroke-dashoffset="0"/>
+        <!-- ტექსტი ცენტრში -->
+        <text x="{cx}" y="{cy-8}" text-anchor="middle"
+              font-size="28" font-weight="700" fill="{txt_clr}"
+              font-family="Noto Sans Georgian, sans-serif">{pct:.0f}%</text>
+        <text x="{cx}" y="{cy+14}" text-anchor="middle"
+              font-size="18" fill="{txt_clr}">{emoji}</text>
+      </svg>
+    </div>
+    """
+
+# ——— კითხვების ჩატვირთვა ———
+@st.cache_data
 def load_quiz_data():
-    json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "questions.json")
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    json_path = os.path.join(current_dir, "questions.json")
     if os.path.exists(json_path):
-        with open(json_path, "r", encoding="utf-8", errors="ignore") as file: return json.load(file)
+        with open(json_path, "r", encoding="utf-8", errors="ignore") as file:
+            return json.load(file)
     return []
 
 quiz_data = load_quiz_data()
 
-# ——— session_state ———
+if not quiz_data:
+    st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
+    st.stop()
+
+
+# ——— session_state ინიციალიზაცია ———
 if "quiz_started" not in st.session_state:
-    st.session_state.update({"quiz_started": False, "current_idx": 0, "correct_count": 0, "wrong_count": 0, "has_responded": False, "user_choice": None, "option_order_map": {}})
+    st.session_state.quiz_started    = False
+    st.session_state.current_idx     = 0
+    st.session_state.correct_count   = 0
+    st.session_state.wrong_count     = 0
+    st.session_state.wrong_indices   = []
+    st.session_state.review_mode     = False
+    st.session_state.review_round    = 0
+    st.session_state.active_indices  = []
+    st.session_state.has_responded   = False
+    st.session_state.user_choice     = None
+    st.session_state.auto_advance_flash = False
+    st.session_state.review_wrong_indices = []
+    st.session_state.option_order_map = {}
+    st.session_state.stats_saved     = False
+    st.session_state.shuffle_on      = True
+
 
 # ——— საწყისი ეკრანი ———
 if not st.session_state.quiz_started:
-    st.markdown("""<div style="text-align: center; padding: 20px;"><h2>🧬 სამედიცინო ტესტები</h2></div>""", unsafe_allow_html=True)
-    if st.button("🚀 ტესტირების დაწყება", type="primary", use_container_width=True):
-        st.session_state.active_indices = list(range(len(quiz_data)))
-        random.shuffle(st.session_state.active_indices)
-        st.session_state.quiz_started = True
-        st.rerun()
+    total_questions = len(quiz_data)
+
+    st.markdown(f"""
+    <div style="
+        background: linear-gradient(135deg, #1a2845 0%, #1e5bb8 60%, #4f9cf9 100%);
+        border-radius: 20px;
+        padding: 30px 24px 26px;
+        margin-bottom: 22px;
+        text-align: center;
+        box-shadow: 0 6px 28px rgba(42,107,205,0.22);
+    ">
+        <div style="font-size:40px; margin-bottom:10px; filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));">🧬</div>
+        <div style="font-size:23px; font-weight:700; color:#ffffff; font-family:'Noto Sans Georgian',sans-serif; margin-bottom:7px; letter-spacing:-0.01em;">
+            სამედიცინო ტესტები
+        </div>
+        <div style="display:inline-block; background:rgba(255,255,255,0.15); border-radius:99px; padding:5px 16px;">
+            <span style="font-size:13px; color:rgba(255,255,255,0.9); font-family:'Noto Sans Georgian',sans-serif;">
+                ბაზაში სულ <strong style="color:#fff;">{total_questions}</strong> კითხვა
+            </span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    tab1, tab2 = st.tabs(["📝  ტესტი", "📊  სტატისტიკა"])
+
+    with tab1:
+        st.markdown('<p style="font-size:15px; font-weight:600; color:#1a2845; margin-bottom:12px; font-family:\'Noto Sans Georgian\',sans-serif;">⚙️ კითხვების დიაპაზონი</p>', unsafe_allow_html=True)
+        col1, col2 = st.columns(2)
+        with col1:
+            start_q = st.number_input("საიდან:", min_value=1, max_value=total_questions, value=1, step=1)
+        with col2:
+            end_q = st.number_input("სად მდე:", min_value=1, max_value=total_questions, value=min(20, total_questions), step=1)
+
+        shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
+
+        if start_q > end_q:
+            st.markdown('<div class="banner banner-red"><p class="banner-title">⚠️ საწყისი კითხვა საბოლოოზე მეტია!</p></div>', unsafe_allow_html=True)
+        else:
+            q_count = end_q - start_q + 1
+            st.markdown(
+                f'<p style="color:#5a6a85; font-size:14px; margin:8px 0 16px; font-family:\'Noto Sans Georgian\',sans-serif;">'
+                f'შეირჩა <strong style="color:#2a6bcd">{q_count}</strong> კითხვა</p>',
+                unsafe_allow_html=True
+            )
+            if st.button("🚀  ტესტირების დაწყება", type="primary", use_container_width=True):
+                indices = list(range(start_q - 1, end_q))
+                if shuffle_on:
+                    random.shuffle(indices)
+                st.session_state.active_indices  = indices
+                st.session_state.shuffle_on      = shuffle_on
+                st.session_state.quiz_started    = True
+                st.session_state.stats_saved     = False
+                st.rerun()
+
+    with tab2:
+        stats    = load_stats()
+        sessions = stats["sessions"]
+        q_wrong  = stats["question_wrong_counts"]
+
+        if not sessions:
+            st.markdown(
+                '<div style="text-align:center; padding:36px 0; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif; font-size:15px; line-height:1.8;">'
+                '🗂️ სტატისტიკა ჯერ არ გაქვთ.<br>პირველი ტესტის შემდეგ გამოჩნდება.</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            all_scores  = [s["score"] for s in sessions]
+            all_total   = sum(s["total"]   for s in sessions)
+            avg_score   = sum(all_scores)  / len(all_scores)
+            best_score  = max(all_scores)
+
+            st.markdown(f"""
+            <div class="stat-card">
+                <div class="stat-card-title">ზოგადი მაჩვენებლები</div>
+                <div class="stat-row"><span class="stat-row-label">სულ ტესტი</span><span class="stat-row-value">{len(sessions)}</span></div>
+                <div class="stat-row"><span class="stat-row-label">სულ კითხვა</span><span class="stat-row-value">{all_total}</span></div>
+                <div class="stat-row"><span class="stat-row-label">საშუალო</span><span class="stat-row-value">{avg_score:.1f}%</span></div>
+                <div class="stat-row"><span class="stat-row-label">საუკეთესო</span><span class="stat-row-value">🏆 {best_score:.1f}%</span></div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            rows = ""
+            for s in reversed(sessions[-5:]):
+                clr = "#15803d" if s["score"] >= 80 else ("#92400e" if s["score"] >= 60 else "#b91c1c")
+                rows += f'<div class="stat-row"><span class="stat-row-label">{s["date"]} &nbsp;·&nbsp; {s["total"]} კ.</span><span class="stat-row-value" style="color:{clr};">{s["score"]}%</span></div>'
+            st.markdown(f'<div class="stat-card"><div class="stat-card-title">ბოლო სესიები</div>{rows}</div>', unsafe_allow_html=True)
+
+            if q_wrong:
+                sorted_wrong = sorted(q_wrong.items(), key=lambda x: x[1], reverse=True)[:12]
+                badges = "".join([f'<span class="weak-q-badge">#{qn} ({cnt}✗)</span>' for qn, cnt in sorted_wrong])
+                st.markdown(f"""
+                <div class="stat-card">
+                    <div class="stat-card-title">ყველაზე ხშირი შეცდომები</div>
+                    <div style="padding:6px 0; line-height:2.4;">{badges}</div>
+                    <div style="font-size:12px; color:#8a93a6; margin-top:6px; font-family:'Noto Sans Georgian',sans-serif;">ფრჩხილში — რამდენჯერ შეგეშალა</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.write("")
+            if st.button("🗑️  სტატისტიკის გასუფთავება", use_container_width=True):
+                clear_stats()
+                st.rerun()
+
     st.stop()
 
-# ——— კითხვის ეკრანი ———
+
+# ——— კითხვის ეკრანი — safety guards ———
+if "option_order_map"      not in st.session_state: st.session_state.option_order_map      = {}
+if "stats_saved"           not in st.session_state: st.session_state.stats_saved           = False
+if "shuffle_on"            not in st.session_state: st.session_state.shuffle_on            = True
+if "review_wrong_indices"  not in st.session_state: st.session_state.review_wrong_indices  = []
+if "review_round"          not in st.session_state: st.session_state.review_round          = 0
+if "review_mode"           not in st.session_state: st.session_state.review_mode           = False
+
 active_indices = st.session_state.active_indices
-current_idx = st.session_state.current_idx
+current_idx    = st.session_state.current_idx
+
+LETTERS = ["ა", "ბ", "გ", "დ", "ე", "ვ"]
 
 if current_idx < len(active_indices):
     real_idx = active_indices[current_idx]
-    q_data = quiz_data[real_idx]
-    options = q_data.get("options", [])
-    
-    st.markdown(f'<p style="font-size:13px; color:#8a93a6;">კითხვა {current_idx + 1} / {len(active_indices)} &nbsp;·&nbsp; ბაზა #{real_idx + 1}</p>', unsafe_allow_html=True)
-    st.info(q_data["question"])
+    q_data   = quiz_data[real_idx]
 
-    # პასუხების დალაგება
+    # ვარიანტების shuffle — ერთხელ, შემდეგ ინახება
     if current_idx not in st.session_state.option_order_map:
-        order = list(range(len(options)))
-        random.shuffle(order)
+        order = list(range(len(q_data["options"])))
+        if st.session_state.shuffle_on:
+            random.shuffle(order)
         st.session_state.option_order_map[current_idx] = order
-    
-    order = st.session_state.option_order_map[current_idx]
-    correct_idx = -1
-    for i, opt in enumerate(options):
-        if str(opt).strip() == str(q_data["correct_answer"]).strip():
-            correct_idx = i
-            break
-    
-    shuffled_correct_pos = order.index(correct_idx) + 1
+    option_order = st.session_state.option_order_map[current_idx]
 
-    # ფერების ლოგიკა (თუ უკვე მონიშნულია)
+    original_correct  = q_data["correct"]
+    correct_idx       = option_order.index(original_correct)
+
+    mode_txt = f" · გადახედვა #{st.session_state.review_round}" if st.session_state.review_mode else ""
+
+    # ——— სტატუს ბარი ———
+    st.markdown(f"""
+    <div class="status-bar">
+        <span class="status-left">კითხვა {current_idx+1}/{len(active_indices)}{mode_txt} · ბაზა #{real_idx+1}</span>
+        <span class="status-right">
+            <span class="status-chip chip-correct">✅ {st.session_state.correct_count}</span>
+            <span class="status-chip chip-wrong">❌ {st.session_state.wrong_count}</span>
+        </span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.progress((current_idx + 1) / len(active_indices))
+    st.write("")
+
+    # ——— კითხვის ბარათი ———
+    st.markdown(f"""
+    <div class="q-card">
+        <div class="q-card-label">კითხვა</div>
+        <div class="q-card-text">{q_data["question"]}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.write("")
+
+    options = q_data["options"]
+
+    # ——— ფერების CSS override ———
     if st.session_state.has_responded:
-        color_css = f"""<style>
-            div[data-testid="stVerticalBlock"] > div:nth-child({shuffled_correct_pos}) button {{ background: #dcfce7 !important; border-color: #22c55e !important; }}
+        correct_child = correct_idx + 1
+        chosen_child  = st.session_state.user_choice + 1
+
+        css = f"""
+        <style>
+        div[data-testid="stVerticalBlock"] > div:nth-child({correct_child}) button[kind="secondary"]:disabled {{
+            background: #f0fdf4 !important;
+            border-color: #22c55e !important;
+            color: #15803d !important;
+            font-weight: 600 !important;
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.15) !important;
+        }}
         """
-        if st.session_state.user_choice != order.index(correct_idx):
-            wrong_pos = st.session_state.user_choice + 1
-            color_css += f'div[data-testid="stVerticalBlock"] > div:nth-child({wrong_pos}) button {{ background: #fee2e2 !important; border-color: #ef4444 !important; }}'
-        st.markdown(color_css + "</style>", unsafe_allow_html=True)
+        if st.session_state.user_choice != correct_idx:
+            css += f"""
+            div[data-testid="stVerticalBlock"] > div:nth-child({chosen_child}) button[kind="secondary"]:disabled {{
+                background: #fff2f2 !important;
+                border-color: #ef4444 !important;
+                color: #b91c1c !important;
+                font-weight: 600 !important;
+                box-shadow: 0 0 0 3px rgba(239,68,68,0.12) !important;
+            }}
+            """
+        css += "</style>"
+        st.markdown(css, unsafe_allow_html=True)
 
-    # ღილაკები
-    for i, orig_idx in enumerate(order):
-        if st.button(options[orig_idx], key=f"btn_{i}", disabled=st.session_state.has_responded, use_container_width=True):
-            st.session_state.has_responded = True
-            st.session_state.user_choice = i
-            
-            # ლოგიკა: სწორია თუ არასწორი
-            if i == order.index(correct_idx):
-                st.session_state.correct_count += 1
-                # მოკლე პაუზა რომ მწვანე დაინახოს მომხმარებელმა
-                time.sleep(0.8)
-                st.session_state.current_idx += 1
-                st.session_state.has_responded = False
-                st.session_state.user_choice = None
-            else:
-                st.session_state.wrong_count += 1
+    # ——— ვარიანტები ———
+    with st.container():
+        for display_idx, original_idx in enumerate(option_order):
+            letter = LETTERS[display_idx] if display_idx < len(LETTERS) else str(display_idx + 1)
+            label  = f"**{letter}**  ·  {options[original_idx]}"
+            if st.button(label, key=f"opt_{current_idx}_{display_idx}",
+                         disabled=st.session_state.has_responded,
+                         use_container_width=True):
+                st.session_state.has_responded = True
+                st.session_state.user_choice   = display_idx
+
+                if display_idx == correct_idx:
+                    if not st.session_state.review_mode:
+                        st.session_state.correct_count += 1
+                    st.session_state.auto_advance_flash = True
+                else:
+                    if not st.session_state.review_mode:
+                        st.session_state.wrong_count += 1
+                        if real_idx not in st.session_state.wrong_indices:
+                            st.session_state.wrong_indices.append(real_idx)
+                    else:
+                        if real_idx not in st.session_state.review_wrong_indices:
+                            st.session_state.review_wrong_indices.append(real_idx)
+                st.rerun()
+
+    # სწორ პასუხზე: ღილაკები render-ია → მწვანე ჩანს → ვიცდით → გადადის
+    if st.session_state.auto_advance_flash:
+        time.sleep(1.2)
+        st.session_state.current_idx       += 1
+        st.session_state.has_responded      = False
+        st.session_state.user_choice        = None
+        st.session_state.auto_advance_flash = False
+        st.rerun()
+
+    # განმარტება — მხოლოდ შეცდომაზე
+    if st.session_state.has_responded and not st.session_state.auto_advance_flash:
+        st.markdown(f"""
+        <div class="explanation-wrap">
+            <div class="explanation-label">💡 სამედიცინო განმარტება</div>
+            <div class="explanation-body">{q_data["explanation"]}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.write("")
+
+        if st.button("შემდეგი კითხვა  →", type="primary", use_container_width=True):
+            st.session_state.current_idx   += 1
+            st.session_state.has_responded  = False
+            st.session_state.user_choice    = None
             st.rerun()
 
-    # განმარტება მხოლოდ არასწორ პასუხზე
-    if st.session_state.has_responded and st.session_state.user_choice != order.index(correct_idx):
-        st.markdown(f'<div class="explanation-wrap"><div class="explanation-label">💡 სამედიცინო განმარტება</div><div class="explanation-body">{q_data.get("explanation", "განმარტება არ არის.")}</div></div>', unsafe_allow_html=True)
-        if st.button("შემდეგი კითხვა →", type="primary", use_container_width=True):
-            st.session_state.current_idx += 1
-            st.session_state.has_responded = False
-            st.session_state.user_choice = None
-            st.rerun()
+
+# ——— შედეგების / გადახედვის ეკრანი ———
 else:
-    st.write(f"## ტესტი დასრულდა! შედეგი: {st.session_state.correct_count}/{len(active_indices)}")
-    if st.button("🔄 თავიდან"):
+    if not st.session_state.review_mode:
+        total = st.session_state.correct_count + st.session_state.wrong_count
+        score = (st.session_state.correct_count / total * 100) if total > 0 else 0
+
+        if not st.session_state.stats_saved:
+            save_session_stats(
+                st.session_state.correct_count,
+                st.session_state.wrong_count,
+                total, score,
+                st.session_state.wrong_indices
+            )
+            st.session_state.stats_saved = True
+
+        st.balloons()
+
+        st.markdown('<p style="font-size:20px; font-weight:700; color:#1a2845; margin-bottom:4px; font-family:\'Noto Sans Georgian\',sans-serif;">📊 ტესტირების შედეგები</p>', unsafe_allow_html=True)
+
+        # SVG Gauge
+        st.markdown(score_gauge_svg(score), unsafe_allow_html=True)
+
+        # 3 ბარათი
+        st.markdown(f"""
+        <div class="result-chips">
+            <div class="result-chip">
+                <div class="result-chip-icon">✅</div>
+                <div class="result-chip-num" style="color:#15803d;">{st.session_state.correct_count}</div>
+                <div class="result-chip-lbl">სწორი</div>
+            </div>
+            <div class="result-chip">
+                <div class="result-chip-icon">❌</div>
+                <div class="result-chip-num" style="color:#b91c1c;">{st.session_state.wrong_count}</div>
+                <div class="result-chip-lbl">შეცდომა</div>
+            </div>
+            <div class="result-chip">
+                <div class="result-chip-icon">📝</div>
+                <div class="result-chip-num">{total}</div>
+                <div class="result-chip-lbl">სულ</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if score >= 80:
+            st.markdown('<div class="banner banner-green"><p class="banner-title">🎉 შესანიშნავი შედეგი!</p><p class="banner-sub">გააგრძელეთ ამ ტემპით.</p></div>', unsafe_allow_html=True)
+        elif score >= 60:
+            st.markdown('<div class="banner banner-yellow"><p class="banner-title">👍 კარგი შედეგი!</p><p class="banner-sub">კიდევ ცოტა ვარჯიში და შესანიშნავი იქნება.</p></div>', unsafe_allow_html=True)
+        else:
+            st.markdown('<div class="banner banner-red"><p class="banner-title">📚 კიდევ ვარჯიში გჭირდებათ</p><p class="banner-sub">შეცდომების გადახედვა დაგეხმარება.</p></div>', unsafe_allow_html=True)
+
+        if st.session_state.wrong_indices:
+            wrong_nums = [str(i+1) for i in st.session_state.wrong_indices]
+            st.markdown(f'<div class="banner banner-red"><p class="banner-title">❌ შეცდომები ({len(wrong_nums)} კითხვა)</p><p class="banner-sub">ბაზის ნომრები: {", ".join(wrong_nums)}</p></div>', unsafe_allow_html=True)
+
+            if st.button("🔁  შეცდომების ხელახლა გავლა", type="primary", use_container_width=True):
+                wrong_list = list(st.session_state.wrong_indices)
+                if st.session_state.shuffle_on:
+                    random.shuffle(wrong_list)
+                st.session_state.review_mode           = True
+                st.session_state.review_round          = 1
+                st.session_state.active_indices        = wrong_list
+                st.session_state.review_wrong_indices  = []
+                st.session_state.option_order_map      = {}
+                st.session_state.current_idx           = 0
+                st.session_state.has_responded         = False
+                st.session_state.user_choice           = None
+                st.rerun()
+        else:
+            st.markdown('<div class="banner banner-green"><p class="banner-title">🎉 ყველა კითხვა სწორად!</p></div>', unsafe_allow_html=True)
+
+        st.write("")
+
+    else:
+        round_num = st.session_state.review_round
+        new_wrong = st.session_state.review_wrong_indices
+
+        if not new_wrong:
+            st.balloons()
+            st.markdown(
+                f'<div class="banner banner-green">'
+                f'<p class="banner-title">🎉 ყველა შეცდომა გასწორდა!</p>'
+                f'<p class="banner-sub">გადახედვის {round_num} ტური დასჭირდა.</p>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+        else:
+            wrong_nums = [str(i+1) for i in new_wrong]
+            st.markdown(
+                f'<div class="banner banner-yellow">'
+                f'<p class="banner-title">გადახედვის #{round_num} ტური დასრულდა</p>'
+                f'<p class="banner-sub">კიდევ {len(new_wrong)} კითხვა შეცდომით: {", ".join(wrong_nums)}</p>'
+                f'</div>',
+                unsafe_allow_html=True
+            )
+            if st.button(f"🔁  კიდევ ერთი ტური  ({len(new_wrong)} კითხვა)", type="primary", use_container_width=True):
+                wrong_list = list(new_wrong)
+                if st.session_state.shuffle_on:
+                    random.shuffle(wrong_list)
+                st.session_state.review_round         += 1
+                st.session_state.active_indices        = wrong_list
+                st.session_state.review_wrong_indices  = []
+                st.session_state.option_order_map      = {}
+                st.session_state.current_idx           = 0
+                st.session_state.has_responded         = False
+                st.session_state.user_choice           = None
+                st.rerun()
+
+    if st.button("🔄  თავიდან დაწყება", use_container_width=True):
         st.session_state.clear()
         st.rerun()
