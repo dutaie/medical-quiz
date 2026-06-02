@@ -47,12 +47,18 @@ st.markdown("""
         border-radius: 14px !important;
         padding: 18px 20px !important;
     }
-    .stAlert p, .stAlert span {
+    .stAlert p, .stAlert span, .stAlert li, .stAlert div {
         font-size: 18px !important;
         font-weight: 500 !important;
         line-height: 1.6 !important;
         color: #1a2845 !important;
         font-family: 'Noto Sans Georgian', sans-serif !important;
+    }
+    
+    .stAlert ol, .stAlert ul {
+        margin-top: 8px !important;
+        margin-bottom: 8px !important;
+        padding-left: 24px !important;
     }
 
     div.stButton > button[kind="secondary"] {
