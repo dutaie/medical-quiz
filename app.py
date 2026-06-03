@@ -467,7 +467,7 @@ def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
     n_opts = len(options)
 
     if isinstance(raw_correct, int):
-        # int: 0 → პირველი (0-based); 1..n → 1-based (ყველაზე გავრცელებული)
+        # int ყოველთვის ინდექსია: 0 → 0-based, 1..n → 1-based
         if raw_correct == 0:
             correct_idx = 0
         elif 1 <= raw_correct <= n_opts:
@@ -479,26 +479,36 @@ def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
         s  = raw_correct.strip()
         sl = s.lower()
 
+        # 1. ასო-კოდი: "a","b","c" ან "ა","ბ","გ"
         if sl in LETTER_MAP_EN:
             correct_idx = LETTER_MAP_EN[sl]
+
         elif s in LETTER_MAP_KA:
             correct_idx = LETTER_MAP_KA[s]
+
         else:
-            try:
-                v = int(s)
-                # სტრინგ-რიცხვი: "1","2"... → 1-based; "0" → 0-based
-                if v == 0:
+            # 2. პირველ რიგში ვეძებთ options-ში ზუსტი დამთხვევით
+            #    ("1" → "1", "1. 2. 3" → "1. 2. 3" და ა.შ.)
+            found = False
+            for i, opt in enumerate(options):
+                if opt.strip().lower() == sl:
+                    correct_idx = i
+                    found = True
+                    break
+
+            # 3. თუ ტექსტით ვერ იპოვა — მხოლოდ მაშინ ვცდით ინდექსად
+            if not found:
+                try:
+                    v = int(s)
+                    if v == 0:
+                        correct_idx = 0
+                    elif 1 <= v <= n_opts:
+                        correct_idx = v - 1
+                    else:
+                        correct_idx = 0
+                except ValueError:
                     correct_idx = 0
-                elif 1 <= v <= n_opts:
-                    correct_idx = v - 1
-                else:
-                    correct_idx = 0
-            except ValueError:
-                # პირდაპირ ტექსტია — მოვძებნოთ options-ში
-                for i, opt in enumerate(options):
-                    if opt.strip().lower() == sl:
-                        correct_idx = i
-                        break
+
 
 
     # ——— explanation ———
