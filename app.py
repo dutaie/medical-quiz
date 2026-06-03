@@ -312,7 +312,7 @@ def load_stats():
             "question_wrong_counts": db.get("question_wrong_counts", {}),
         }
 
-def save_session_stats(correct, wrong, total, score, wrong_indices):
+def save_session_stats(correct, wrong, total, score, wrong_indices, quiz_data_ref):
     with shelve.open(STATS_FILE) as db:
         sessions = db.get("sessions", [])
         sessions.append({
@@ -325,7 +325,8 @@ def save_session_stats(correct, wrong, total, score, wrong_indices):
         db["sessions"] = sessions[-20:]
         q_wrong = db.get("question_wrong_counts", {})
         for idx in wrong_indices:
-            key = str(idx + 1)
+            # ბაზის id გამოვიყენოთ, fallback → idx+1
+            key = str(quiz_data_ref[idx].get("id", idx + 1))
             q_wrong[key] = q_wrong.get(key, 0) + 1
         db["question_wrong_counts"] = q_wrong
 
@@ -381,21 +382,176 @@ def score_gauge_svg(score):
     </div>
     """
 
-# ——— კითხვების ჩატვირთვა ———
-@st.cache_data
+# ——— კითხვების ჩატვირთვა და ნორმალიზება ———
+
+import re as _re
+
+def _extract_number_from_question(text: str):
+    """
+    თუ კითხვა იწყება ნომრით (მაგ. "1. რა არის..." ან "42) რა არის..."),
+    აბრუნებს (ნომერი, გაწმენდილი_ტექსტი). წინააღმდეგ შემთხვევაში (None, text).
+    """
+    m = _re.match(r"^\s*(\d+)\s*[.):\-–]\s*", text)
+    if m:
+        num = int(m.group(1))
+        clean = text[m.end():]
+        return num, clean
+    return None, text
+
+def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
+    """
+    ერთ JSON ჩანაწერს გადაიყვანს სტანდარტულ ფორმატში:
+    {
+        "id":          int,   # 1-დან დაწყებული
+        "question":    str,   # ნომრის გარეშე
+        "options":     list,  # სტრინგების სია
+        "correct":     int,   # 0-based ინდექსი options-ში
+        "explanation": str,
+    }
+    მხარს უჭერს:
+      - id ველი (int ან str)
+      - ნომერი პირდაპირ question-ში ("1. კითხვა..." ან "1) კითხვა...")
+      - id არ არის და question-შიც ნომერი არ არის → fallback_idx+1
+      - correct: int (0-based), int (1-based როცა >0 და == len(options)),
+                 str ("A"/"B"/"C"/"D" ან "ა"/"ბ"/"გ"/"დ" ან "0"/"1"...)
+      - options: list ან dict {"A": "...", "B": "..."}
+    """
+    # ——— id ———
+    raw_id = raw.get("id")
+    if raw_id is not None:
+        try:
+            entry_id = int(raw_id)
+        except (ValueError, TypeError):
+            entry_id = fallback_idx + 1
+    else:
+        entry_id = None  # შევამოწმებთ question-ში
+
+    # ——— question ———
+    question_raw = str(raw.get("question") or raw.get("Question") or "კითხვა არ მოიძებნა")
+    num_in_q, question_clean = _extract_number_from_question(question_raw)
+
+    if entry_id is None:
+        entry_id = num_in_q if num_in_q is not None else (fallback_idx + 1)
+
+    # ——— options ———
+    raw_opts = raw.get("options") or raw.get("Options") or raw.get("choices") or []
+    LETTER_MAP_EN = {"a": 0, "b": 1, "c": 2, "d": 3, "e": 4, "f": 5}
+    LETTER_MAP_KA = {"ა": 0, "ბ": 1, "გ": 2, "დ": 3, "ე": 4, "ვ": 5}
+
+    if isinstance(raw_opts, dict):
+        # {"A": "ტექსტი", "B": "ტექსტი"} სახე
+        sorted_keys = sorted(raw_opts.keys(), key=lambda k: LETTER_MAP_EN.get(k.lower(), ord(k)))
+        options = [str(raw_opts[k]) for k in sorted_keys]
+    elif isinstance(raw_opts, list):
+        options = [str(o) for o in raw_opts]
+    else:
+        options = []
+
+    if not options:
+        options = ["პასუხი არ მოიძებნა"]
+
+    # ——— correct ———
+    raw_correct = raw.get("correct")
+    if raw_correct is None:
+        raw_correct = raw.get("answer") or raw.get("correct_answer") or 0
+
+    correct_idx = 0
+    if isinstance(raw_correct, int):
+        # 0-based თუ < len, 1-based თუ == len (ზოგიერთი ბაზა 1-ით იწყებს)
+        if 0 <= raw_correct < len(options):
+            correct_idx = raw_correct
+        elif 1 <= raw_correct <= len(options):
+            correct_idx = raw_correct - 1
+        else:
+            correct_idx = 0
+    elif isinstance(raw_correct, str):
+        s = raw_correct.strip()
+        sl = s.lower()
+        if sl in LETTER_MAP_EN:
+            correct_idx = LETTER_MAP_EN[sl]
+        elif s in LETTER_MAP_KA:
+            correct_idx = LETTER_MAP_KA[s]
+        else:
+            try:
+                v = int(s)
+                if 0 <= v < len(options):
+                    correct_idx = v
+                elif 1 <= v <= len(options):
+                    correct_idx = v - 1
+            except ValueError:
+                # შესაძლოა პასუხის ტექსტია პირდაპირ
+                sl_full = s.lower()
+                for i, opt in enumerate(options):
+                    if opt.strip().lower() == sl_full:
+                        correct_idx = i
+                        break
+
+    # ——— explanation ———
+    explanation = str(
+        raw.get("explanation") or raw.get("Explanation") or
+        raw.get("rationale") or raw.get("comment") or ""
+    )
+    if not explanation:
+        explanation = "განმარტება არ მოიძებნა."
+
+    return {
+        "id":          entry_id,
+        "question":    question_clean.strip(),
+        "options":     options,
+        "correct":     correct_idx,
+        "explanation": explanation,
+    }
+
+@st.cache_data(show_spinner=False)
 def load_quiz_data():
+    """
+    ჩატვირთავს და ანორმალიზებს questions.json-ს.
+    მხარს უჭერს:
+      - სია სახის JSON: [{...}, {...}]
+      - ობიექტ სახის JSON: {"questions": [...]}  ან  {"data": [...]}
+      - შერეული ფორმატები (id-ით და id-ის გარეშე ერთად)
+      - 3000+ კითხვა (cache_data უზრუნველყოფს ერთჯერად დამუშავებას)
+    """
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(current_dir, "questions.json")
-    if os.path.exists(json_path):
-        with open(json_path, "r", encoding="utf-8", errors="ignore") as file:
-            return json.load(file)
-    return []
+    json_path   = os.path.join(current_dir, "questions.json")
+
+    if not os.path.exists(json_path):
+        return []
+
+    with open(json_path, "r", encoding="utf-8", errors="replace") as f:
+        raw = json.load(f)
+
+    # სია პირდაპირ, ან wrapper ობიექტი
+    if isinstance(raw, list):
+        raw_list = raw
+    elif isinstance(raw, dict):
+        raw_list = (
+            raw.get("questions") or raw.get("data") or
+            raw.get("items")     or raw.get("quiz")  or []
+        )
+    else:
+        return []
+
+    result = []
+    for i, entry in enumerate(raw_list):
+        if not isinstance(entry, dict):
+            continue
+        try:
+            result.append(_normalize_entry(entry, i))
+        except Exception:
+            # ერთი ჩანაწერის შეცდომა მთელ ბაზას არ ჩააგდებს
+            continue
+
+    return result
 
 quiz_data = load_quiz_data()
 
 if not quiz_data:
     st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
     st.stop()
+
+# სულ კითხვების რაოდენობა — len()-ით ერთხელ გამოთვლა, cache-ში
+TOTAL_QUESTIONS = len(quiz_data)
 
 
 # ——— session_state ინიციალიზაცია ———
@@ -419,7 +575,6 @@ if "quiz_started" not in st.session_state:
 
 # ——— საწყისი ეკრანი ———
 if not st.session_state.quiz_started:
-    total_questions = len(quiz_data)
 
     st.markdown(f"""
     <div style="
@@ -436,7 +591,7 @@ if not st.session_state.quiz_started:
         </div>
         <div style="display:inline-block; background:rgba(255,255,255,0.15); border-radius:99px; padding:5px 16px;">
             <span style="font-size:13px; color:rgba(255,255,255,0.9); font-family:'Noto Sans Georgian',sans-serif;">
-                ბაზაში სულ <strong style="color:#fff;">{total_questions}</strong> კითხვა
+                ბაზაში სულ <strong style="color:#fff;">{TOTAL_QUESTIONS}</strong> კითხვა
             </span>
         </div>
     </div>
@@ -448,9 +603,9 @@ if not st.session_state.quiz_started:
         st.markdown('<p style="font-size:15px; font-weight:600; color:#1a2845; margin-bottom:12px; font-family:\'Noto Sans Georgian\',sans-serif;">⚙️ კითხვების დიაპაზონი</p>', unsafe_allow_html=True)
         col1, col2 = st.columns(2)
         with col1:
-            start_q = st.number_input("საიდან:", min_value=1, max_value=total_questions, value=1, step=1)
+            start_q = st.number_input("საიდან:", min_value=1, max_value=TOTAL_QUESTIONS, value=1, step=1)
         with col2:
-            end_q = st.number_input("სად მდე:", min_value=1, max_value=total_questions, value=min(20, total_questions), step=1)
+            end_q = st.number_input("სად მდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
@@ -554,11 +709,12 @@ if current_idx < len(active_indices):
     correct_idx       = option_order.index(original_correct)
 
     mode_txt = f" · გადახედვა #{st.session_state.review_round}" if st.session_state.review_mode else ""
+    db_id = q_data.get("id", real_idx + 1)
 
     # ——— სტატუს ბარი ———
     st.markdown(f"""
     <div class="status-bar">
-        <span class="status-left">კითხვა {current_idx+1}/{len(active_indices)}{mode_txt} · ბაზა #{real_idx+1}</span>
+        <span class="status-left">კითხვა {current_idx+1}/{len(active_indices)}{mode_txt} · ბაზა #{db_id}</span>
         <span class="status-right">
             <span class="status-chip chip-correct">✅ {st.session_state.correct_count}</span>
             <span class="status-chip chip-wrong">❌ {st.session_state.wrong_count}</span>
@@ -670,7 +826,8 @@ else:
                 st.session_state.correct_count,
                 st.session_state.wrong_count,
                 total, score,
-                st.session_state.wrong_indices
+                st.session_state.wrong_indices,
+                quiz_data
             )
             st.session_state.stats_saved = True
 
@@ -710,7 +867,7 @@ else:
             st.markdown('<div class="banner banner-red"><p class="banner-title">📚 კიდევ ვარჯიში გჭირდებათ</p><p class="banner-sub">შეცდომების გადახედვა დაგეხმარება.</p></div>', unsafe_allow_html=True)
 
         if st.session_state.wrong_indices:
-            wrong_nums = [str(i+1) for i in st.session_state.wrong_indices]
+            wrong_nums = [str(quiz_data[i].get("id", i+1)) for i in st.session_state.wrong_indices]
             st.markdown(f'<div class="banner banner-red"><p class="banner-title">❌ შეცდომები ({len(wrong_nums)} კითხვა)</p><p class="banner-sub">ბაზის ნომრები: {", ".join(wrong_nums)}</p></div>', unsafe_allow_html=True)
 
             if st.button("🔁  შეცდომების ხელახლა გავლა", type="primary", use_container_width=True):
@@ -745,7 +902,7 @@ else:
                 unsafe_allow_html=True
             )
         else:
-            wrong_nums = [str(i+1) for i in new_wrong]
+            wrong_nums = [str(quiz_data[i].get("id", i+1)) for i in new_wrong]
             st.markdown(
                 f'<div class="banner banner-yellow">'
                 f'<p class="banner-title">გადახედვის #{round_num} ტური დასრულდა</p>'
