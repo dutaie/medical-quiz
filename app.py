@@ -605,7 +605,7 @@ if not st.session_state.quiz_started:
         with col1:
             start_q = st.number_input("საიდან:", min_value=1, max_value=TOTAL_QUESTIONS, value=1, step=1)
         with col2:
-            end_q = st.number_input("სად მდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
+            end_q = st.number_input("სადამდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
