@@ -450,23 +450,35 @@ def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
     if not options:
         options = ["პასუხი არ მოიძებნა"]
 
+
     # ——— correct ———
-    raw_correct = raw.get("correct")
-    if raw_correct is None:
-        raw_correct = raw.get("answer") or raw.get("correct_answer") or 0
+    # ველების პრიორიტეტი: "correct" → "correct_answer" → "answer" → 0
+    # (or გარეშე, რათა "0" და 0 არ დაიკარგოს falsy-ობის გამო)
+    if "correct" in raw and raw["correct"] is not None:
+        raw_correct = raw["correct"]
+    elif "correct_answer" in raw and raw["correct_answer"] is not None:
+        raw_correct = raw["correct_answer"]
+    elif "answer" in raw and raw["answer"] is not None:
+        raw_correct = raw["answer"]
+    else:
+        raw_correct = 0
 
     correct_idx = 0
+    n_opts = len(options)
+
     if isinstance(raw_correct, int):
-        # 0-based თუ < len, 1-based თუ == len (ზოგიერთი ბაზა 1-ით იწყებს)
-        if 0 <= raw_correct < len(options):
-            correct_idx = raw_correct
-        elif 1 <= raw_correct <= len(options):
+        # int: 0 → პირველი (0-based); 1..n → 1-based (ყველაზე გავრცელებული)
+        if raw_correct == 0:
+            correct_idx = 0
+        elif 1 <= raw_correct <= n_opts:
             correct_idx = raw_correct - 1
         else:
             correct_idx = 0
+
     elif isinstance(raw_correct, str):
-        s = raw_correct.strip()
+        s  = raw_correct.strip()
         sl = s.lower()
+
         if sl in LETTER_MAP_EN:
             correct_idx = LETTER_MAP_EN[sl]
         elif s in LETTER_MAP_KA:
@@ -474,17 +486,20 @@ def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
         else:
             try:
                 v = int(s)
-                if 0 <= v < len(options):
-                    correct_idx = v
-                elif 1 <= v <= len(options):
+                # სტრინგ-რიცხვი: "1","2"... → 1-based; "0" → 0-based
+                if v == 0:
+                    correct_idx = 0
+                elif 1 <= v <= n_opts:
                     correct_idx = v - 1
+                else:
+                    correct_idx = 0
             except ValueError:
-                # შესაძლოა პასუხის ტექსტია პირდაპირ
-                sl_full = s.lower()
+                # პირდაპირ ტექსტია — მოვძებნოთ options-ში
                 for i, opt in enumerate(options):
-                    if opt.strip().lower() == sl_full:
+                    if opt.strip().lower() == sl:
                         correct_idx = i
                         break
+
 
     # ——— explanation ———
     explanation = str(
@@ -605,7 +620,7 @@ if not st.session_state.quiz_started:
         with col1:
             start_q = st.number_input("საიდან:", min_value=1, max_value=TOTAL_QUESTIONS, value=1, step=1)
         with col2:
-            end_q = st.number_input("სად მდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
+            end_q = st.number_input("სადამდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
