@@ -605,7 +605,7 @@ if not st.session_state.quiz_started:
         with col1:
             start_q = st.number_input("საიდან:", min_value=1, max_value=TOTAL_QUESTIONS, value=1, step=1)
         with col2:
-            end_q = st.number_input("სადამდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
+            end_q = st.number_input("სად მდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
@@ -697,16 +697,21 @@ if current_idx < len(active_indices):
     real_idx = active_indices[current_idx]
     q_data   = quiz_data[real_idx]
 
-    # ვარიანტების shuffle — ერთხელ, შემდეგ ინახება
+
+    # ვარიანტების shuffle — ერთხელ გენერირდება და ინახება order+correct_idx ერთად
     if current_idx not in st.session_state.option_order_map:
         order = list(range(len(q_data["options"])))
         if st.session_state.shuffle_on:
             random.shuffle(order)
-        st.session_state.option_order_map[current_idx] = order
-    option_order = st.session_state.option_order_map[current_idx]
+        # correct_idx ერთხელ ვთვლით და ვინახავთ — ყოველ render-ზე აღარ გამოითვლება
+        st.session_state.option_order_map[current_idx] = {
+            "order":   order,
+            "correct": order.index(q_data["correct"]),
+        }
 
-    original_correct  = q_data["correct"]
-    correct_idx       = option_order.index(original_correct)
+    saved        = st.session_state.option_order_map[current_idx]
+    option_order = saved["order"]
+    correct_idx  = saved["correct"]
 
     mode_txt = f" · გადახედვა #{st.session_state.review_round}" if st.session_state.review_mode else ""
     db_id = q_data.get("id", real_idx + 1)
