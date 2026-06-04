@@ -64,33 +64,6 @@ header[data-testid="stHeader"] { height: 0 !important; background: transparent !
     font-family: 'Noto Sans Georgian', sans-serif;
 }
 
-/* ——— ნავიგაციის ღილაკები (წინა / შემდეგი / გამოტოვება) ——— */
-div[data-testid="stHorizontalBlock"] div.stButton > button[kind="secondary"] {
-    background: #f1f4f9 !important;
-    border: 1.5px solid #dce3ef !important;
-    color: #4a5a78 !important;
-    font-weight: 500 !important;
-    font-size: 14px !important;
-    min-height: 40px !important;
-    padding: 8px 12px !important;
-    border-radius: 10px !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-div[data-testid="stHorizontalBlock"] div.stButton > button[kind="secondary"]:hover {
-    background: #e4eaf5 !important;
-    border-color: #b0bfd8 !important;
-    color: #1e2d40 !important;
-    transform: none !important;
-    box-shadow: none !important;
-}
-div[data-testid="stHorizontalBlock"] div.stButton > button[kind="secondary"]:disabled {
-    background: #f7f9fc !important;
-    border-color: #e8edf5 !important;
-    color: #c0c9d8 !important;
-    transform: none !important;
-}
-
 /* ——— სტატუს ბარი ——— */
 .status-bar {
     display: flex;
@@ -883,11 +856,59 @@ if current_idx < len(active_indices):
         st.write("")
 
     # ——— ნავიგაციის ღილაკები ———
-    st.markdown('<div style="margin-top:8px;"></div>', unsafe_allow_html=True)
+    # CSS key-ის მიხედვით — Streamlit button key → data-testid="stButton" შვილი
+    prev_disabled = current_idx == 0
+    next_label    = "შემდეგი ›" if st.session_state.has_responded else "გამოტოვება ›"
+
+    st.markdown(f"""
+    <style>
+    /* nav_prev */
+    div[data-testid="stButton"]:has(button[kind="secondary"][data-testid="baseButton-secondary"]:nth-of-type(1)) {{}}
+    button[kind="secondary"][key="nav_prev"],
+    #nav_prev button,
+    [data-testid="nav_prev"] button {{
+        background: #eef2f9 !important;
+    }}
+    /* ნავიგაციის ღილაკების wrapper — column-ების შემდეგ ბოლო ორი secondary button */
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"] {{
+        background: #eef2f9 !important;
+        border: 1.5px solid #d4dcea !important;
+        color: #3d5280 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        min-height: 40px !important;
+        padding: 8px 12px !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+        transform: none !important;
+        transition: background 0.15s, border-color 0.15s !important;
+    }}
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"]:hover {{
+        background: #dce4f5 !important;
+        border-color: #a8bcd8 !important;
+        color: #1e2d40 !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }}
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"]:disabled {{
+        background: #f5f7fb !important;
+        border-color: #e4e9f2 !important;
+        color: #b8c4d8 !important;
+        transform: none !important;
+        box-shadow: none !important;
+        opacity: 1 !important;
+    }}
+    div[data-testid="stHorizontalBlock"] button[kind="secondary"] p {{
+        font-size: 14px !important;
+        color: inherit !important;
+    }}
+    </style>
+    <div style="margin-top:10px;"></div>
+    """, unsafe_allow_html=True)
+
     nav_col1, nav_col2 = st.columns([1, 1])
 
     with nav_col1:
-        prev_disabled = current_idx == 0
         if st.button("‹ წინა",
                      key="nav_prev",
                      disabled=prev_disabled,
@@ -899,7 +920,6 @@ if current_idx < len(active_indices):
             st.rerun()
 
     with nav_col2:
-        next_label = "შემდეგი ›" if st.session_state.has_responded else "გამოტოვება ›"
         if st.button(next_label,
                      key="nav_next",
                      use_container_width=True):
