@@ -30,12 +30,12 @@ header[data-testid="stHeader"] { height: 0 !important; background: transparent !
 
 /* ——— კითხვის ბარათი ——— */
 .q-card {
-    background: #ffffff;
+    background: linear-gradient(135deg, #1e3a5f 0%, #1a3352 100%);
     border-radius: 18px;
-    border: 1.5px solid #e2e8f4;
+    border: none;
     padding: 22px 24px;
     margin-bottom: 6px;
-    box-shadow: 0 2px 12px rgba(42,107,205,0.07);
+    box-shadow: 0 4px 18px rgba(20,40,80,0.18);
     position: relative;
     overflow: hidden;
 }
@@ -44,7 +44,7 @@ header[data-testid="stHeader"] { height: 0 !important; background: transparent !
     position: absolute;
     top: 0; left: 0;
     width: 5px; height: 100%;
-    background: linear-gradient(180deg, #2a6bcd, #4f9cf9);
+    background: linear-gradient(180deg, #4f9cf9, #7ec8ff);
     border-radius: 18px 0 0 18px;
 }
 .q-card-label {
@@ -52,7 +52,7 @@ header[data-testid="stHeader"] { height: 0 !important; background: transparent !
     font-weight: 700;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: #2a6bcd;
+    color: #7ec8ff;
     margin-bottom: 10px;
     font-family: 'Noto Sans Georgian', sans-serif;
 }
@@ -60,8 +60,35 @@ header[data-testid="stHeader"] { height: 0 !important; background: transparent !
     font-size: 17px;
     font-weight: 500;
     line-height: 1.65;
-    color: #1a2845;
+    color: #e8f0fb;
     font-family: 'Noto Sans Georgian', sans-serif;
+}
+
+/* ——— ნავიგაციის ღილაკები (წინა / შემდეგი / გამოტოვება) ——— */
+div[data-testid="stHorizontalBlock"] div.stButton > button[kind="secondary"] {
+    background: #f1f4f9 !important;
+    border: 1.5px solid #dce3ef !important;
+    color: #4a5a78 !important;
+    font-weight: 500 !important;
+    font-size: 14px !important;
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+div[data-testid="stHorizontalBlock"] div.stButton > button[kind="secondary"]:hover {
+    background: #e4eaf5 !important;
+    border-color: #b0bfd8 !important;
+    color: #1e2d40 !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+div[data-testid="stHorizontalBlock"] div.stButton > button[kind="secondary"]:disabled {
+    background: #f7f9fc !important;
+    border-color: #e8edf5 !important;
+    color: #c0c9d8 !important;
+    transform: none !important;
 }
 
 /* ——— სტატუს ბარი ——— */
@@ -855,20 +882,8 @@ if current_idx < len(active_indices):
         """, unsafe_allow_html=True)
         st.write("")
 
-    # ——— ნავიგაციის ღილაკები — inline HTML სტილით ———
-    st.markdown("""
-    <style>
-    div[data-testid="stHorizontalBlock"] div.stButton > button {
-        min-height: 40px !important;
-        padding: 8px 12px !important;
-        font-size: 14px !important;
-        border-radius: 10px !important;
-        font-weight: 500 !important;
-    }
-    </style>
-    <div style="margin-top:8px;"></div>
-    """, unsafe_allow_html=True)
-
+    # ——— ნავიგაციის ღილაკები ———
+    st.markdown('<div style="margin-top:8px;"></div>', unsafe_allow_html=True)
     nav_col1, nav_col2 = st.columns([1, 1])
 
     with nav_col1:
