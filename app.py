@@ -275,26 +275,6 @@ div.stButton > button[kind="primary"]:active {
 .banner-red    .banner-title { color:#b91c1c; }
 .banner-red    .banner-sub   { color:#991b1b; }
 
-/* ——— ნავიგაციის ისრები ——— */
-div.stButton > button[kind="secondary"][data-testid*="nav_"] {
-    background: #f4f7ff !important;
-    border: 1.5px solid #dde6f8 !important;
-    color: #2a6bcd !important;
-    font-weight: 600 !important;
-    border-radius: 12px !important;
-    font-size: 14px !important;
-    padding: 10px 8px !important;
-    min-height: 42px !important;
-}
-div.stButton > button[kind="secondary"][data-testid*="nav_"]:hover {
-    background: #e8f0ff !important;
-    border-color: #2a6bcd !important;
-}
-div.stButton > button[kind="secondary"][data-testid*="nav_"]:disabled {
-    background: #f9fafb !important;
-    border-color: #e8edf5 !important;
-    color: #c0c9d8 !important;
-}
 input[type="number"] {
     font-family: 'Noto Sans Georgian', sans-serif !important;
     font-size: 16px !important;
@@ -760,35 +740,30 @@ if current_idx < len(active_indices):
     mode_txt = f" · გადახედვა #{st.session_state.review_round}" if st.session_state.review_mode else ""
     db_id = q_data.get("id", real_idx + 1)
 
-    # review-ის დროს ახალი counter-ები
+    # ——— counter-ები: review-ში ახლიდან ითვლება ცალკე ველებიდან ———
     if st.session_state.review_mode:
-        disp_correct = (current_idx) - len([
-            i for i in st.session_state.review_wrong_indices
-            if active_indices.index(i) < current_idx
-            if i in active_indices
-        ]) if st.session_state.review_wrong_indices else current_idx
-        review_correct = current_idx - len([x for x in st.session_state.review_wrong_indices if x in active_indices[:current_idx]])
-        review_wrong   = len([x for x in st.session_state.review_wrong_indices if x in active_indices[:current_idx]])
-        chip_correct   = review_correct
-        chip_wrong     = review_wrong
+        answered_so_far = [x for x in st.session_state.review_wrong_indices if x in active_indices[:current_idx]]
+        chip_wrong   = len(answered_so_far)
+        chip_correct = current_idx - chip_wrong
     else:
         chip_correct = st.session_state.correct_count
         chip_wrong   = st.session_state.wrong_count
 
     # ——— სტატუს ბარი ———
+    review_prefix = f'🔁 გადახედვა #{st.session_state.review_round} &nbsp;·&nbsp; ' if st.session_state.review_mode else ''
     st.markdown(f"""
     <div class="status-bar">
         <span class="status-left">
-            {'🔁 გადახედვა #' + str(st.session_state.review_round) + ' &nbsp;·&nbsp; ' if st.session_state.review_mode else ''}კითხვა {current_idx+1}/{len(active_indices)} &nbsp;·&nbsp; <span style="color:#b0bac9;">#{db_id}</span>
+            {review_prefix}კითხვა {current_idx+1}/{len(active_indices)} &nbsp;·&nbsp; <span style="color:#b0bac9;">#{db_id}</span>
         </span>
         <span class="status-right">
-            <span class="status-chip chip-correct">✅ {st.session_state.correct_count}</span>
-            <span class="status-chip chip-wrong">❌ {st.session_state.wrong_count}</span>
+            <span class="status-chip chip-correct">✅ {chip_correct}</span>
+            <span class="status-chip chip-wrong">❌ {chip_wrong}</span>
         </span>
     </div>
     """, unsafe_allow_html=True)
 
-    # ——— პროგრეს ბარი (st.progress-ის გარეშე — pure HTML) ———
+    # ——— პროგრეს ბარი — pure HTML ———
     pct = int((current_idx + 1) / len(active_indices) * 100)
     st.markdown(f"""
     <div style="height:7px; background:#e8edf5; border-radius:99px; margin-bottom:16px; overflow:hidden;">
@@ -880,29 +855,42 @@ if current_idx < len(active_indices):
         """, unsafe_allow_html=True)
         st.write("")
 
-    # ——— ნავიგაციის ისრები ———
-    can_go_prev = current_idx > 0
-    can_go_next = st.session_state.has_responded or True  # skip ყოველთვის ხელმისაწვდომია
+    # ——— ნავიგაციის ღილაკები — inline HTML სტილით ———
+    st.markdown("""
+    <style>
+    div[data-testid="stHorizontalBlock"] div.stButton > button {
+        min-height: 40px !important;
+        padding: 8px 12px !important;
+        font-size: 14px !important;
+        border-radius: 10px !important;
+        font-weight: 500 !important;
+    }
+    </style>
+    <div style="margin-top:8px;"></div>
+    """, unsafe_allow_html=True)
 
-    st.markdown('<div style="margin-top: 10px;"></div>', unsafe_allow_html=True)
-    nav_col1, nav_col2, nav_col3 = st.columns([1, 3, 1])
+    nav_col1, nav_col2 = st.columns([1, 1])
 
     with nav_col1:
-        if st.button("← წინა", key="nav_prev",
-                     disabled=not can_go_prev,
+        prev_disabled = current_idx == 0
+        if st.button("‹ წინა",
+                     key="nav_prev",
+                     disabled=prev_disabled,
                      use_container_width=True):
-            st.session_state.current_idx   -= 1
-            st.session_state.has_responded  = False
-            st.session_state.user_choice    = None
+            st.session_state.current_idx       -= 1
+            st.session_state.has_responded      = False
+            st.session_state.user_choice        = None
             st.session_state.auto_advance_flash = False
             st.rerun()
 
-    with nav_col3:
-        next_label = "შემდეგი →" if st.session_state.has_responded else "გამოტოვება →"
-        if st.button(next_label, key="nav_next", use_container_width=True):
-            st.session_state.current_idx   += 1
-            st.session_state.has_responded  = False
-            st.session_state.user_choice    = None
+    with nav_col2:
+        next_label = "შემდეგი ›" if st.session_state.has_responded else "გამოტოვება ›"
+        if st.button(next_label,
+                     key="nav_next",
+                     use_container_width=True):
+            st.session_state.current_idx       += 1
+            st.session_state.has_responded      = False
+            st.session_state.user_choice        = None
             st.session_state.auto_advance_flash = False
             st.rerun()
 
