@@ -275,7 +275,26 @@ div.stButton > button[kind="primary"]:active {
 .banner-red    .banner-title { color:#b91c1c; }
 .banner-red    .banner-sub   { color:#991b1b; }
 
-/* ——— number_input, tabs ——— */
+/* ——— ნავიგაციის ისრები ——— */
+div.stButton > button[kind="secondary"][data-testid*="nav_"] {
+    background: #f4f7ff !important;
+    border: 1.5px solid #dde6f8 !important;
+    color: #2a6bcd !important;
+    font-weight: 600 !important;
+    border-radius: 12px !important;
+    font-size: 14px !important;
+    padding: 10px 8px !important;
+    min-height: 42px !important;
+}
+div.stButton > button[kind="secondary"][data-testid*="nav_"]:hover {
+    background: #e8f0ff !important;
+    border-color: #2a6bcd !important;
+}
+div.stButton > button[kind="secondary"][data-testid*="nav_"]:disabled {
+    background: #f9fafb !important;
+    border-color: #e8edf5 !important;
+    color: #c0c9d8 !important;
+}
 input[type="number"] {
     font-family: 'Noto Sans Georgian', sans-serif !important;
     font-size: 16px !important;
@@ -630,7 +649,7 @@ if not st.session_state.quiz_started:
         with col1:
             start_q = st.number_input("საიდან:", min_value=1, max_value=TOTAL_QUESTIONS, value=1, step=1)
         with col2:
-            end_q = st.number_input("სადამდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
+            end_q = st.number_input("სად მდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
@@ -741,10 +760,27 @@ if current_idx < len(active_indices):
     mode_txt = f" · გადახედვა #{st.session_state.review_round}" if st.session_state.review_mode else ""
     db_id = q_data.get("id", real_idx + 1)
 
+    # review-ის დროს ახალი counter-ები
+    if st.session_state.review_mode:
+        disp_correct = (current_idx) - len([
+            i for i in st.session_state.review_wrong_indices
+            if active_indices.index(i) < current_idx
+            if i in active_indices
+        ]) if st.session_state.review_wrong_indices else current_idx
+        review_correct = current_idx - len([x for x in st.session_state.review_wrong_indices if x in active_indices[:current_idx]])
+        review_wrong   = len([x for x in st.session_state.review_wrong_indices if x in active_indices[:current_idx]])
+        chip_correct   = review_correct
+        chip_wrong     = review_wrong
+    else:
+        chip_correct = st.session_state.correct_count
+        chip_wrong   = st.session_state.wrong_count
+
     # ——— სტატუს ბარი ———
     st.markdown(f"""
     <div class="status-bar">
-        <span class="status-left">კითხვა {current_idx+1}/{len(active_indices)}{mode_txt} · ბაზა #{db_id}</span>
+        <span class="status-left">
+            {'🔁 გადახედვა #' + str(st.session_state.review_round) + ' &nbsp;·&nbsp; ' if st.session_state.review_mode else ''}კითხვა {current_idx+1}/{len(active_indices)} &nbsp;·&nbsp; <span style="color:#b0bac9;">#{db_id}</span>
+        </span>
         <span class="status-right">
             <span class="status-chip chip-correct">✅ {st.session_state.correct_count}</span>
             <span class="status-chip chip-wrong">❌ {st.session_state.wrong_count}</span>
@@ -752,13 +788,19 @@ if current_idx < len(active_indices):
     </div>
     """, unsafe_allow_html=True)
 
-    st.progress((current_idx + 1) / len(active_indices))
-    st.write("")
+    # ——— პროგრეს ბარი (st.progress-ის გარეშე — pure HTML) ———
+    pct = int((current_idx + 1) / len(active_indices) * 100)
+    st.markdown(f"""
+    <div style="height:7px; background:#e8edf5; border-radius:99px; margin-bottom:16px; overflow:hidden;">
+        <div style="height:100%; width:{pct}%; background:linear-gradient(90deg,#2a6bcd,#4f9cf9);
+             border-radius:99px; transition:width 0.4s ease;"></div>
+    </div>
+    """, unsafe_allow_html=True)
 
     # ——— კითხვის ბარათი ———
     st.markdown(f"""
     <div class="q-card">
-        <div class="q-card-label">კითხვა</div>
+        <div class="q-card-label">🩺 კითხვა</div>
         <div class="q-card-text">{q_data["question"]}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -838,10 +880,30 @@ if current_idx < len(active_indices):
         """, unsafe_allow_html=True)
         st.write("")
 
-        if st.button("შემდეგი კითხვა  →", type="primary", use_container_width=True):
+    # ——— ნავიგაციის ისრები ———
+    can_go_prev = current_idx > 0
+    can_go_next = st.session_state.has_responded or True  # skip ყოველთვის ხელმისაწვდომია
+
+    st.markdown('<div style="margin-top: 10px;"></div>', unsafe_allow_html=True)
+    nav_col1, nav_col2, nav_col3 = st.columns([1, 3, 1])
+
+    with nav_col1:
+        if st.button("← წინა", key="nav_prev",
+                     disabled=not can_go_prev,
+                     use_container_width=True):
+            st.session_state.current_idx   -= 1
+            st.session_state.has_responded  = False
+            st.session_state.user_choice    = None
+            st.session_state.auto_advance_flash = False
+            st.rerun()
+
+    with nav_col3:
+        next_label = "შემდეგი →" if st.session_state.has_responded else "გამოტოვება →"
+        if st.button(next_label, key="nav_next", use_container_width=True):
             st.session_state.current_idx   += 1
             st.session_state.has_responded  = False
             st.session_state.user_choice    = None
+            st.session_state.auto_advance_flash = False
             st.rerun()
 
 
