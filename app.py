@@ -574,7 +574,22 @@ if not quiz_data:
     st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
     st.stop()
 
-# სულ კითხვების რაოდენობა — len()-ით ერთხელ გამოთვლა, cache-ში
+# ID → array index რუქა (სწრაფი ძებნისთვის)
+# თუ ყველა კითხვას აქვს უნიკალური id — ვიყენებთ id-ს
+# თუ id-ები არ არის ან მეორდება — fallback: პოზიცია+1
+_id_list  = [q.get("id") for q in quiz_data]
+_has_ids  = all(x is not None for x in _id_list)
+_unique   = len(set(_id_list)) == len(_id_list)
+USE_IDS   = _has_ids and _unique
+
+if USE_IDS:
+    ID_TO_IDX = {q["id"]: i for i, q in enumerate(quiz_data)}
+    ALL_IDS   = sorted(ID_TO_IDX.keys())
+    MIN_ID, MAX_ID = ALL_IDS[0], ALL_IDS[-1]
+else:
+    ID_TO_IDX = {}
+    MIN_ID, MAX_ID = 1, len(quiz_data)
+
 TOTAL_QUESTIONS = len(quiz_data)
 
 
@@ -625,25 +640,39 @@ if not st.session_state.quiz_started:
 
     with tab1:
         st.markdown('<p style="font-size:15px; font-weight:600; color:#1a2845; margin-bottom:12px; font-family:\'Noto Sans Georgian\',sans-serif;">⚙️ კითხვების დიაპაზონი</p>', unsafe_allow_html=True)
+
+        if USE_IDS:
+            range_hint = f"ID {MIN_ID} – {MAX_ID}"
+        else:
+            range_hint = f"1 – {TOTAL_QUESTIONS}"
+
+        st.markdown(f'<p style="font-size:12px; color:#8a93a6; margin-bottom:8px; font-family:\'Noto Sans Georgian\',sans-serif;">დიაპაზონი: {range_hint}</p>', unsafe_allow_html=True)
+
         col1, col2 = st.columns(2)
         with col1:
-            start_q = st.number_input("საიდან:", min_value=1, max_value=TOTAL_QUESTIONS, value=1, step=1)
+            start_q = st.number_input("საიდან:", min_value=MIN_ID, max_value=MAX_ID, value=MIN_ID, step=1)
         with col2:
-            end_q = st.number_input("სად მდე:", min_value=1, max_value=TOTAL_QUESTIONS, value=min(20, TOTAL_QUESTIONS), step=1)
+            end_q = st.number_input("სად მდე:", min_value=MIN_ID, max_value=MAX_ID,
+                                     value=min(MIN_ID + 19, MAX_ID), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
         if start_q > end_q:
             st.markdown('<div class="banner banner-red"><p class="banner-title">⚠️ საწყისი კითხვა საბოლოოზე მეტია!</p></div>', unsafe_allow_html=True)
         else:
-            q_count = end_q - start_q + 1
+            if USE_IDS:
+                # ID-ების მიხედვით — ვიღებთ მხოლოდ იმ ელემენტებს, რომელთა id დიაპაზონშია
+                indices = [ID_TO_IDX[i] for i in ALL_IDS if start_q <= i <= end_q]
+            else:
+                indices = list(range(start_q - 1, end_q))
+
+            q_count = len(indices)
             st.markdown(
                 f'<p style="color:#5a6a85; font-size:14px; margin:8px 0 16px; font-family:\'Noto Sans Georgian\',sans-serif;">'
                 f'შეირჩა <strong style="color:#2a6bcd">{q_count}</strong> კითხვა</p>',
                 unsafe_allow_html=True
             )
             if st.button("🚀  ტესტირების დაწყება", type="primary", use_container_width=True):
-                indices = list(range(start_q - 1, end_q))
                 if shuffle_on:
                     random.shuffle(indices)
                 st.session_state.active_indices  = indices
