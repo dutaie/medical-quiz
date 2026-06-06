@@ -339,6 +339,15 @@ def clear_stats():
         db["sessions"] = []
         db["question_wrong_counts"] = {}
 
+def load_marked() -> set:
+    """რთულად მონიშნული კითხვების array index-ების სეტი."""
+    with shelve.open(STATS_FILE) as db:
+        return set(db.get("marked_indices", []))
+
+def save_marked(marked: set):
+    with shelve.open(STATS_FILE) as db:
+        db["marked_indices"] = list(marked)
+
 def score_gauge_svg(score):
     """SVG gauge შედეგის ვიზუალიზაციისთვის."""
     pct = min(max(score, 0), 100)
@@ -615,7 +624,8 @@ if "quiz_started" not in st.session_state:
     st.session_state.option_order_map = {}
     st.session_state.stats_saved     = False
     st.session_state.shuffle_on      = True
-    st.session_state.selected_session = None  # სტატისტიკის tab-ში არჩეული სესია
+    st.session_state.selected_session = None
+    st.session_state.marked_indices  = load_marked()
 
 
 # ——— საწყისი ეკრანი ———
@@ -686,6 +696,28 @@ if not st.session_state.quiz_started:
                 st.session_state.quiz_started    = True
                 st.session_state.stats_saved     = False
                 st.rerun()
+
+            # ——— რთული კითხვების გავლა ———
+            marked = st.session_state.marked_indices
+            if marked:
+                marked_in_range = [idx for idx in indices if idx in marked]
+                if marked_in_range:
+                    st.markdown('<div style="margin-top:8px;"></div>', unsafe_allow_html=True)
+                    if st.button(f"⭐  მხოლოდ რთული კითხვები  ({len(marked_in_range)} კ.)",
+                                 use_container_width=True):
+                        m_list = list(marked_in_range)
+                        if shuffle_on:
+                            random.shuffle(m_list)
+                        st.session_state.active_indices = m_list
+                        st.session_state.shuffle_on     = shuffle_on
+                        st.session_state.quiz_started   = True
+                        st.session_state.stats_saved    = False
+                        st.rerun()
+
+            # ——— ყველა რთული (დიაპაზონის გარეშე) ———
+            all_marked = list(st.session_state.marked_indices)
+            if all_marked and len(all_marked) != len(marked_in_range if marked else []):
+                st.markdown(f'<p style="font-size:12px; color:#8a93a6; margin:4px 0 0; font-family:\'Noto Sans Georgian\',sans-serif;">სულ ⭐ მონიშნული: <strong style="color:#d97706">{len(all_marked)}</strong> კითხვა ბაზაში</p>', unsafe_allow_html=True)
 
     with tab2:
         if "selected_session" not in st.session_state:
@@ -857,6 +889,42 @@ if not st.session_state.quiz_started:
                 st.session_state.selected_session = None
                 st.rerun()
 
+            # ——— ⭐ მონიშნული კითხვები ———
+            marked = st.session_state.get("marked_indices", set())
+            if marked:
+                marked_ids = sorted([quiz_data[i].get("id", i+1) for i in marked])
+                badges = "".join([f'<span class="weak-q-badge" style="background:#fffbeb; color:#b45309; border-color:#fcd34d;">⭐ #{qid}</span>' for qid in marked_ids])
+                st.markdown(f"""
+                <div class="stat-card" style="margin-top:10px; border-color:#fde68a;">
+                    <div class="stat-card-title" style="color:#b45309;">⭐ მონიშნული რთული კითხვები — {len(marked)}</div>
+                    <div style="padding:4px 0; line-height:2.4;">{badges}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                if st.button(f"⭐  ყველა რთული კითხვის გავლა  ({len(marked)} კ.)",
+                             key="start_marked_stats", use_container_width=True):
+                    m_list = list(marked)
+                    random.shuffle(m_list)
+                    st.session_state.quiz_started       = True
+                    st.session_state.review_mode        = False
+                    st.session_state.active_indices     = m_list
+                    st.session_state.shuffle_on         = True
+                    st.session_state.current_idx        = 0
+                    st.session_state.correct_count      = 0
+                    st.session_state.wrong_count        = 0
+                    st.session_state.wrong_indices      = []
+                    st.session_state.has_responded      = False
+                    st.session_state.user_choice        = None
+                    st.session_state.auto_advance_flash = False
+                    st.session_state.option_order_map   = {}
+                    st.session_state.stats_saved        = False
+                    st.rerun()
+
+                if st.button("🗑️  მონიშვნების გასუფთავება", key="clear_marked", use_container_width=True):
+                    st.session_state.marked_indices = set()
+                    save_marked(set())
+                    st.rerun()
+
     st.stop()
 
 
@@ -907,10 +975,12 @@ if current_idx < len(active_indices):
 
     # ——— სტატუს ბარი ———
     review_prefix = f'🔁 გადახედვა #{st.session_state.review_round} &nbsp;·&nbsp; ' if st.session_state.review_mode else ''
+    is_marked_status = real_idx in st.session_state.get("marked_indices", set())
+    star_badge = '&nbsp;<span style="color:#f59e0b; font-size:13px;">⭐</span>' if is_marked_status else ''
     st.markdown(f"""
     <div class="status-bar">
         <span class="status-left">
-            {review_prefix}კითხვა {current_idx+1}/{len(active_indices)} &nbsp;·&nbsp; <span style="color:#b0bac9;">#{db_id}</span>
+            {review_prefix}კითხვა {current_idx+1}/{len(active_indices)} &nbsp;·&nbsp; <span style="color:#b0bac9;">#{db_id}</span>{star_badge}
         </span>
         <span class="status-right">
             <span class="status-chip chip-correct">✅ {chip_correct}</span>
@@ -994,7 +1064,7 @@ if current_idx < len(active_indices):
 
     # სწორ პასუხზე: ღილაკები render-ია → მწვანე ჩანს → ვიცდით → გადადის
     if st.session_state.auto_advance_flash:
-        time.sleep(0.7)
+        time.sleep(1.2)
         st.session_state.current_idx       += 1
         st.session_state.has_responded      = False
         st.session_state.user_choice        = None
@@ -1084,6 +1154,48 @@ if current_idx < len(active_indices):
             st.session_state.user_choice        = None
             st.session_state.auto_advance_flash = False
             st.rerun()
+
+    # ——— ⭐ მარკირების ღილაკი ———
+    if "marked_indices" not in st.session_state:
+        st.session_state.marked_indices = load_marked()
+
+    is_marked  = real_idx in st.session_state.marked_indices
+    star_label = "⭐  რთულია — მონიშნულია" if is_marked else "☆  მონიშვნა როგორც რთული"
+    star_bg    = "#fffbeb" if is_marked else "#f8faff"
+    star_brd   = "#f59e0b" if is_marked else "#dde6f8"
+    star_clr   = "#b45309" if is_marked else "#8a93a6"
+    star_fw    = "600"     if is_marked else "400"
+
+    st.markdown(f"""
+    <style>
+    div[data-testid="stButton"]:has(button[key="star_toggle"]) button {{
+        background: {star_bg} !important;
+        border: 1.5px solid {star_brd} !important;
+        color: {star_clr} !important;
+        min-height: 36px !important;
+        padding: 6px 14px !important;
+        font-size: 13px !important;
+        border-radius: 10px !important;
+        box-shadow: none !important;
+        transform: none !important;
+        font-weight: {star_fw} !important;
+    }}
+    div[data-testid="stButton"]:has(button[key="star_toggle"]) button:hover {{
+        background: #fef3c7 !important;
+        border-color: #f59e0b !important;
+        color: #92400e !important;
+    }}
+    </style>
+    <div style="margin-top:4px;"></div>
+    """, unsafe_allow_html=True)
+
+    if st.button(star_label, key="star_toggle", use_container_width=True):
+        if is_marked:
+            st.session_state.marked_indices.discard(real_idx)
+        else:
+            st.session_state.marked_indices.add(real_idx)
+        save_marked(st.session_state.marked_indices)
+        st.rerun()
 
 
 # ——— შედეგების / გადახედვის ეკრანი ———
