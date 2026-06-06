@@ -1061,7 +1061,7 @@ if current_idx < len(active_indices):
 
     # სწორ პასუხზე: ღილაკები render-ია → მწვანე ჩანს → ვიცდით → გადადის
     if st.session_state.auto_advance_flash:
-        time.sleep(1.2)
+        time.sleep(0.7)
         st.session_state.current_idx       += 1
         st.session_state.has_responded      = False
         st.session_state.user_choice        = None
