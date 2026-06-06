@@ -706,10 +706,8 @@ if not st.session_state.quiz_started:
                     if st.button(f"⭐  მხოლოდ რთული კითხვები  ({len(marked_in_range)} კ.)",
                                  use_container_width=True):
                         m_list = list(marked_in_range)
-                        if shuffle_on:
-                            random.shuffle(m_list)
                         st.session_state.active_indices = m_list
-                        st.session_state.shuffle_on     = shuffle_on
+                        st.session_state.shuffle_on     = False
                         st.session_state.quiz_started   = True
                         st.session_state.stats_saved    = False
                         st.rerun()
@@ -852,11 +850,11 @@ if not st.session_state.quiz_started:
                             else:
                                 retry_indices = [qid - 1 for qid in wrong_ids if 0 < qid <= TOTAL_QUESTIONS]
                             if retry_indices:
-                                random.shuffle(retry_indices)
                                 st.session_state.quiz_started          = True
                                 st.session_state.review_mode           = True
                                 st.session_state.review_round          = 1
                                 st.session_state.active_indices        = retry_indices
+                                st.session_state.shuffle_on            = False
                                 st.session_state.current_idx           = 0
                                 st.session_state.has_responded         = False
                                 st.session_state.user_choice           = None
@@ -904,11 +902,10 @@ if not st.session_state.quiz_started:
                 if st.button(f"⭐  ყველა რთული კითხვის გავლა  ({len(marked)} კ.)",
                              key="start_marked_stats", use_container_width=True):
                     m_list = list(marked)
-                    random.shuffle(m_list)
                     st.session_state.quiz_started       = True
                     st.session_state.review_mode        = False
                     st.session_state.active_indices     = m_list
-                    st.session_state.shuffle_on         = True
+                    st.session_state.shuffle_on         = False
                     st.session_state.current_idx        = 0
                     st.session_state.correct_count      = 0
                     st.session_state.wrong_count        = 0
@@ -1255,11 +1252,10 @@ else:
 
             if st.button("🔁  შეცდომების ხელახლა გავლა", type="primary", use_container_width=True):
                 wrong_list = list(st.session_state.wrong_indices)
-                if st.session_state.shuffle_on:
-                    random.shuffle(wrong_list)
                 st.session_state.review_mode           = True
                 st.session_state.review_round          = 1
                 st.session_state.active_indices        = wrong_list
+                st.session_state.shuffle_on            = False
                 st.session_state.review_wrong_indices  = []
                 st.session_state.option_order_map      = {}
                 st.session_state.current_idx           = 0
@@ -1295,10 +1291,9 @@ else:
             )
             if st.button(f"🔁  კიდევ ერთი ტური  ({len(new_wrong)} კითხვა)", type="primary", use_container_width=True):
                 wrong_list = list(new_wrong)
-                if st.session_state.shuffle_on:
-                    random.shuffle(wrong_list)
                 st.session_state.review_round         += 1
                 st.session_state.active_indices        = wrong_list
+                st.session_state.shuffle_on            = False
                 st.session_state.review_wrong_indices  = []
                 st.session_state.option_order_map      = {}
                 st.session_state.current_idx           = 0
