@@ -314,17 +314,22 @@ def load_stats():
 def save_session_stats(correct, wrong, total, score, wrong_indices, quiz_data_ref):
     with shelve.open(STATS_FILE) as db:
         sessions = db.get("sessions", [])
+        # უნიკალური session id — timestamp-ზე დაფუძნებული
+        session_id = datetime.now().strftime("%Y%m%d%H%M%S")
+        # შეცდომების ID-ები (ბაზის id ან fallback)
+        wrong_ids = [quiz_data_ref[idx].get("id", idx + 1) for idx in wrong_indices]
         sessions.append({
-            "date": datetime.now().strftime("%d/%m/%Y %H:%M"),
-            "correct": correct,
-            "wrong": wrong,
-            "total": total,
-            "score": round(score, 1),
+            "session_id": session_id,
+            "date":       datetime.now().strftime("%d/%m/%Y %H:%M"),
+            "correct":    correct,
+            "wrong":      wrong,
+            "total":      total,
+            "score":      round(score, 1),
+            "wrong_ids":  wrong_ids,
         })
         db["sessions"] = sessions[-20:]
         q_wrong = db.get("question_wrong_counts", {})
         for idx in wrong_indices:
-            # ბაზის id გამოვიყენოთ, fallback → idx+1
             key = str(quiz_data_ref[idx].get("id", idx + 1))
             q_wrong[key] = q_wrong.get(key, 0) + 1
         db["question_wrong_counts"] = q_wrong
@@ -610,6 +615,7 @@ if "quiz_started" not in st.session_state:
     st.session_state.option_order_map = {}
     st.session_state.stats_saved     = False
     st.session_state.shuffle_on      = True
+    st.session_state.selected_session = None  # სტატისტიკის tab-ში არჩეული სესია
 
 
 # ——— საწყისი ეკრანი ———
@@ -652,8 +658,8 @@ if not st.session_state.quiz_started:
         with col1:
             start_q = st.number_input("საიდან:", min_value=MIN_ID, max_value=MAX_ID, value=MIN_ID, step=1)
         with col2:
-            end_q = st.number_input("სადამდე:", min_value=MIN_ID, max_value=MAX_ID,
-                                     value=min(MIN_ID + 2373, MAX_ID), step=1)
+            end_q = st.number_input("სად მდე:", min_value=MIN_ID, max_value=MAX_ID,
+                                     value=min(MIN_ID + 19, MAX_ID), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
@@ -682,6 +688,9 @@ if not st.session_state.quiz_started:
                 st.rerun()
 
     with tab2:
+        if "selected_session" not in st.session_state:
+            st.session_state.selected_session = None
+
         stats    = load_stats()
         sessions = stats["sessions"]
         q_wrong  = stats["question_wrong_counts"]
@@ -693,10 +702,10 @@ if not st.session_state.quiz_started:
                 unsafe_allow_html=True
             )
         else:
-            all_scores  = [s["score"] for s in sessions]
-            all_total   = sum(s["total"]   for s in sessions)
-            avg_score   = sum(all_scores)  / len(all_scores)
-            best_score  = max(all_scores)
+            all_scores = [s["score"] for s in sessions]
+            all_total  = sum(s["total"] for s in sessions)
+            avg_score  = sum(all_scores) / len(all_scores)
+            best_score = max(all_scores)
 
             st.markdown(f"""
             <div class="stat-card">
@@ -708,17 +717,94 @@ if not st.session_state.quiz_started:
             </div>
             """, unsafe_allow_html=True)
 
-            rows = ""
-            for s in reversed(sessions[-5:]):
-                clr = "#15803d" if s["score"] >= 80 else ("#92400e" if s["score"] >= 60 else "#b91c1c")
-                rows += f'<div class="stat-row"><span class="stat-row-label">{s["date"]} &nbsp;·&nbsp; {s["total"]} კ.</span><span class="stat-row-value" style="color:{clr};">{s["score"]}%</span></div>'
-            st.markdown(f'<div class="stat-card"><div class="stat-card-title">ბოლო სესიები</div>{rows}</div>', unsafe_allow_html=True)
+            # ——— სესიების სია — კლიკადური ———
+            st.markdown('<div class="stat-card-title" style="margin:14px 0 8px; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif;">სესიების ისტორია</div>', unsafe_allow_html=True)
 
+            for i, s in enumerate(reversed(sessions)):
+                sid       = s.get("session_id", str(i))
+                clr       = "#15803d" if s["score"] >= 80 else ("#92400e" if s["score"] >= 60 else "#b91c1c")
+                bg_clr    = "#f0fdf4" if s["score"] >= 80 else ("#fffbeb" if s["score"] >= 60 else "#fff2f2")
+                brd_clr   = "#bbf7d0" if s["score"] >= 80 else ("#fde68a" if s["score"] >= 60 else "#fecaca")
+                wrong_ids = s.get("wrong_ids", [])
+                is_open   = st.session_state.selected_session == sid
+
+                # სესიის ჰედერი — ღილაკი
+                btn_label = f"{'▼' if is_open else '▶'}  {s['date']}  ·  {s['total']} კ.  ·  {s['score']}%"
+                if st.button(btn_label, key=f"ses_{sid}", use_container_width=True):
+                    st.session_state.selected_session = None if is_open else sid
+                    st.rerun()
+
+                # CSS ამ ღილაკისთვის
+                st.markdown(f"""
+                <style>
+                div[data-testid="stButton"]:has(button[key="ses_{sid}"]) button {{
+                    background: {bg_clr} !important;
+                    border: 1.5px solid {brd_clr} !important;
+                    color: {clr} !important;
+                    font-weight: 600 !important;
+                    text-align: left !important;
+                    justify-content: flex-start !important;
+                    font-size: 14px !important;
+                    min-height: 44px !important;
+                    border-radius: 12px !important;
+                    margin-bottom: 4px !important;
+                }}
+                </style>
+                """, unsafe_allow_html=True)
+
+                # გაშლილი სექცია
+                if is_open:
+                    if wrong_ids:
+                        badges = "".join([f'<span class="weak-q-badge">#{qid}</span>' for qid in wrong_ids])
+                        st.markdown(f"""
+                        <div style="background:#f8faff; border:1.5px solid #dde6f8; border-radius:12px;
+                                    padding:14px 16px; margin-bottom:8px; animation: fadeSlideUp 0.2s ease;">
+                            <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+                                        color:#8a93a6; margin-bottom:8px; font-family:'Noto Sans Georgian',sans-serif;">
+                                ❌ შეცდომები ({len(wrong_ids)} კითხვა)
+                            </div>
+                            <div style="line-height:2.4; margin-bottom:10px;">{badges}</div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                        # ამ სესიის შეცდომების ახლიდან გავლა
+                        if st.button(f"🔁  ამ სესიის შეცდომების გავლა ({len(wrong_ids)} კ.)",
+                                     key=f"retry_{sid}", type="primary", use_container_width=True):
+                            # ID-ებიდან → array indices
+                            if USE_IDS:
+                                retry_indices = [ID_TO_IDX[qid] for qid in wrong_ids if qid in ID_TO_IDX]
+                            else:
+                                retry_indices = [qid - 1 for qid in wrong_ids if 0 < qid <= TOTAL_QUESTIONS]
+
+                            if retry_indices:
+                                random.shuffle(retry_indices)
+                                st.session_state.quiz_started          = True
+                                st.session_state.review_mode           = True
+                                st.session_state.review_round          = 1
+                                st.session_state.active_indices        = retry_indices
+                                st.session_state.current_idx           = 0
+                                st.session_state.has_responded         = False
+                                st.session_state.user_choice           = None
+                                st.session_state.auto_advance_flash    = False
+                                st.session_state.review_wrong_indices  = []
+                                st.session_state.option_order_map      = {}
+                                st.session_state.stats_saved           = False
+                                st.session_state.selected_session      = None
+                                st.rerun()
+                    else:
+                        st.markdown(
+                            '<div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:12px; '
+                            'padding:12px 16px; margin-bottom:8px; font-size:14px; color:#15803d; '
+                            'font-family:\'Noto Sans Georgian\',sans-serif;">🎉 ამ სესიაში შეცდომები არ ყოფილა!</div>',
+                            unsafe_allow_html=True
+                        )
+
+            # ——— ყველაზე ხშირი შეცდომები ———
             if q_wrong:
                 sorted_wrong = sorted(q_wrong.items(), key=lambda x: x[1], reverse=True)[:12]
                 badges = "".join([f'<span class="weak-q-badge">#{qn} ({cnt}✗)</span>' for qn, cnt in sorted_wrong])
                 st.markdown(f"""
-                <div class="stat-card">
+                <div class="stat-card" style="margin-top:10px;">
                     <div class="stat-card-title">ყველაზე ხშირი შეცდომები</div>
                     <div style="padding:6px 0; line-height:2.4;">{badges}</div>
                     <div style="font-size:12px; color:#8a93a6; margin-top:6px; font-family:'Noto Sans Georgian',sans-serif;">ფრჩხილში — რამდენჯერ შეგეშალა</div>
@@ -728,6 +814,7 @@ if not st.session_state.quiz_started:
             st.write("")
             if st.button("🗑️  სტატისტიკის გასუფთავება", use_container_width=True):
                 clear_stats()
+                st.session_state.selected_session = None
                 st.rerun()
 
     st.stop()
@@ -867,7 +954,7 @@ if current_idx < len(active_indices):
 
     # სწორ პასუხზე: ღილაკები render-ია → მწვანე ჩანს → ვიცდით → გადადის
     if st.session_state.auto_advance_flash:
-        time.sleep(0.8)
+        time.sleep(1.2)
         st.session_state.current_idx       += 1
         st.session_state.has_responded      = False
         st.session_state.user_choice        = None
