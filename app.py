@@ -695,6 +695,81 @@ if not st.session_state.quiz_started:
         sessions = stats["sessions"]
         q_wrong  = stats["question_wrong_counts"]
 
+        # კომპაქტური სტილი — spacing-ის მოხსნა
+        st.markdown("""
+        <style>
+        /* tab2-ის შიგნით ყველა element-ს შორის gap მინიმუმამდე */
+        div[data-testid="stVerticalBlock"] > div[data-testid="stVerticalBlock"] > div {
+            gap: 0 !important;
+        }
+        /* session ღილაკების wrapper-ების margin */
+        .ses-btn-wrap > div { margin-bottom: 0 !important; }
+        .ses-btn-wrap div.stButton { margin-bottom: 0 !important; }
+        .ses-btn-wrap div.stButton > button[kind="secondary"] {
+            border-radius: 0 !important;
+            border-bottom: none !important;
+            min-height: 40px !important;
+            padding: 9px 14px !important;
+            font-size: 13.5px !important;
+            font-weight: 500 !important;
+            background: #ffffff !important;
+            border-left: 1.5px solid #e2e8f4 !important;
+            border-right: 1.5px solid #e2e8f4 !important;
+            border-top: 1px solid #eef1f8 !important;
+            color: #2d3f5e !important;
+            box-shadow: none !important;
+            transform: none !important;
+        }
+        .ses-btn-wrap div.stButton > button[kind="secondary"]:hover {
+            background: #f4f7ff !important;
+            color: #1a2845 !important;
+        }
+        .ses-btn-wrap.first div.stButton > button[kind="secondary"] {
+            border-radius: 10px 10px 0 0 !important;
+            border-top: 1.5px solid #e2e8f4 !important;
+        }
+        .ses-btn-wrap.last div.stButton > button[kind="secondary"] {
+            border-radius: 0 0 10px 10px !important;
+            border-bottom: 1.5px solid #e2e8f4 !important;
+        }
+        .ses-btn-wrap.only div.stButton > button[kind="secondary"] {
+            border-radius: 10px !important;
+            border: 1.5px solid #e2e8f4 !important;
+        }
+        .ses-btn-wrap.open div.stButton > button[kind="secondary"] {
+            background: #f0f4ff !important;
+            color: #1a2845 !important;
+            border-color: #c5d3f0 !important;
+            border-bottom: none !important;
+            font-weight: 600 !important;
+        }
+        /* expand სექცია */
+        .ses-expand {
+            background: #f8faff;
+            border: 1.5px solid #c5d3f0;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            padding: 12px 14px 10px;
+            margin-bottom: 0;
+            animation: fadeSlideUp 0.2s ease;
+        }
+        .ses-expand-badges { line-height: 2.2; margin-bottom: 8px; }
+        .ses-expand-title {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.07em;
+            text-transform: uppercase; color: #8a93a6; margin-bottom: 6px;
+            font-family: 'Noto Sans Georgian', sans-serif;
+        }
+        /* retry ღილაკი expand-ში */
+        .ses-expand div.stButton > button[kind="primary"] {
+            min-height: 36px !important;
+            padding: 7px 14px !important;
+            font-size: 13px !important;
+            border-radius: 8px !important;
+            box-shadow: none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
         if not sessions:
             st.markdown(
                 '<div style="text-align:center; padding:36px 0; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif; font-size:15px; line-height:1.8;">'
@@ -717,65 +792,49 @@ if not st.session_state.quiz_started:
             </div>
             """, unsafe_allow_html=True)
 
-            # ——— სესიების სია — კლიკადური ———
-            st.markdown('<div class="stat-card-title" style="margin:14px 0 8px; font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#8a93a6; font-family:\'Noto Sans Georgian\',sans-serif;">სესიების ისტორია</div>', unsafe_allow_html=True)
+            st.markdown('<div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:#8a93a6; margin:14px 0 4px; font-family:\'Noto Sans Georgian\',sans-serif;">სესიების ისტორია</div>', unsafe_allow_html=True)
 
-            for i, s in enumerate(reversed(sessions)):
+            reversed_sessions = list(reversed(sessions))
+            total_ses = len(reversed_sessions)
+
+            for i, s in enumerate(reversed_sessions):
                 sid       = s.get("session_id", str(i))
                 clr       = "#15803d" if s["score"] >= 80 else ("#92400e" if s["score"] >= 60 else "#b91c1c")
-                bg_clr    = "#f0fdf4" if s["score"] >= 80 else ("#fffbeb" if s["score"] >= 60 else "#fff2f2")
-                brd_clr   = "#bbf7d0" if s["score"] >= 80 else ("#fde68a" if s["score"] >= 60 else "#fecaca")
+                icon      = "🟢" if s["score"] >= 80 else ("🟡" if s["score"] >= 60 else "🔴")
                 wrong_ids = s.get("wrong_ids", [])
                 is_open   = st.session_state.selected_session == sid
 
-                # სესიის ჰედერი — ღილაკი
-                btn_label = f"{'▼' if is_open else '▶'}  {s['date']}  ·  {s['total']} კ.  ·  {s['score']}%"
+                # CSS class-ები პოზიციის მიხედვით
+                pos_class = ""
+                if total_ses == 1:         pos_class = "only"
+                elif i == 0:               pos_class = "first"
+                elif i == total_ses - 1:   pos_class = "last"
+
+                open_class = "open" if is_open else ""
+
+                btn_label = f"{icon}  {s['date']}  ·  {s['total']} კ.  ·  **{s['score']}%**  {'▼' if is_open else '▶'}"
+
+                st.markdown(f'<div class="ses-btn-wrap {pos_class} {open_class}">', unsafe_allow_html=True)
                 if st.button(btn_label, key=f"ses_{sid}", use_container_width=True):
                     st.session_state.selected_session = None if is_open else sid
                     st.rerun()
+                st.markdown('</div>', unsafe_allow_html=True)
 
-                # CSS ამ ღილაკისთვის
-                st.markdown(f"""
-                <style>
-                div[data-testid="stButton"]:has(button[key="ses_{sid}"]) button {{
-                    background: {bg_clr} !important;
-                    border: 1.5px solid {brd_clr} !important;
-                    color: {clr} !important;
-                    font-weight: 600 !important;
-                    text-align: left !important;
-                    justify-content: flex-start !important;
-                    font-size: 14px !important;
-                    min-height: 44px !important;
-                    border-radius: 12px !important;
-                    margin-bottom: 4px !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
-
-                # გაშლილი სექცია
                 if is_open:
+                    st.markdown('<div class="ses-expand">', unsafe_allow_html=True)
                     if wrong_ids:
                         badges = "".join([f'<span class="weak-q-badge">#{qid}</span>' for qid in wrong_ids])
                         st.markdown(f"""
-                        <div style="background:#f8faff; border:1.5px solid #dde6f8; border-radius:12px;
-                                    padding:14px 16px; margin-bottom:8px; animation: fadeSlideUp 0.2s ease;">
-                            <div style="font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
-                                        color:#8a93a6; margin-bottom:8px; font-family:'Noto Sans Georgian',sans-serif;">
-                                ❌ შეცდომები ({len(wrong_ids)} კითხვა)
-                            </div>
-                            <div style="line-height:2.4; margin-bottom:10px;">{badges}</div>
-                        </div>
+                        <div class="ses-expand-title">❌ შეცდომები — {len(wrong_ids)} კითხვა</div>
+                        <div class="ses-expand-badges">{badges}</div>
                         """, unsafe_allow_html=True)
 
-                        # ამ სესიის შეცდომების ახლიდან გავლა
-                        if st.button(f"🔁  ამ სესიის შეცდომების გავლა ({len(wrong_ids)} კ.)",
+                        if st.button(f"🔁  შეცდომების ახლიდან გავლა  ({len(wrong_ids)} კ.)",
                                      key=f"retry_{sid}", type="primary", use_container_width=True):
-                            # ID-ებიდან → array indices
                             if USE_IDS:
                                 retry_indices = [ID_TO_IDX[qid] for qid in wrong_ids if qid in ID_TO_IDX]
                             else:
                                 retry_indices = [qid - 1 for qid in wrong_ids if 0 < qid <= TOTAL_QUESTIONS]
-
                             if retry_indices:
                                 random.shuffle(retry_indices)
                                 st.session_state.quiz_started          = True
@@ -792,22 +851,18 @@ if not st.session_state.quiz_started:
                                 st.session_state.selected_session      = None
                                 st.rerun()
                     else:
-                        st.markdown(
-                            '<div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:12px; '
-                            'padding:12px 16px; margin-bottom:8px; font-size:14px; color:#15803d; '
-                            'font-family:\'Noto Sans Georgian\',sans-serif;">🎉 ამ სესიაში შეცდომები არ ყოფილა!</div>',
-                            unsafe_allow_html=True
-                        )
+                        st.markdown('<div style="font-size:13px; color:#15803d; font-family:\'Noto Sans Georgian\',sans-serif;">🎉 ამ სესიაში შეცდომები არ ყოფილა!</div>', unsafe_allow_html=True)
+                    st.markdown('</div>', unsafe_allow_html=True)
 
             # ——— ყველაზე ხშირი შეცდომები ———
             if q_wrong:
                 sorted_wrong = sorted(q_wrong.items(), key=lambda x: x[1], reverse=True)[:12]
                 badges = "".join([f'<span class="weak-q-badge">#{qn} ({cnt}✗)</span>' for qn, cnt in sorted_wrong])
                 st.markdown(f"""
-                <div class="stat-card" style="margin-top:10px;">
+                <div class="stat-card" style="margin-top:14px;">
                     <div class="stat-card-title">ყველაზე ხშირი შეცდომები</div>
-                    <div style="padding:6px 0; line-height:2.4;">{badges}</div>
-                    <div style="font-size:12px; color:#8a93a6; margin-top:6px; font-family:'Noto Sans Georgian',sans-serif;">ფრჩხილში — რამდენჯერ შეგეშალა</div>
+                    <div style="padding:4px 0; line-height:2.4;">{badges}</div>
+                    <div style="font-size:12px; color:#8a93a6; margin-top:4px; font-family:'Noto Sans Georgian',sans-serif;">ფრჩხილში — რამდენჯერ შეგეშალა</div>
                 </div>
                 """, unsafe_allow_html=True)
 
