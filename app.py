@@ -476,6 +476,11 @@ def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
     else:
         raw_correct = 0
 
+    # list-ის შემთხვევაში პირველ ელემენტს ვიღებთ
+    # მაგ: ["ყველა დებულება ჭეშმარიტია"] → "ყველა დებულება ჭეშმარიტია"
+    if isinstance(raw_correct, list):
+        raw_correct = raw_correct[0] if raw_correct else 0
+
     correct_idx = 0
     n_opts = len(options)
 
@@ -668,8 +673,8 @@ if not st.session_state.quiz_started:
         with col1:
             start_q = st.number_input("საიდან:", min_value=MIN_ID, max_value=MAX_ID, value=MIN_ID, step=1)
         with col2:
-            end_q = st.number_input("სადამდე:", min_value=MIN_ID, max_value=MAX_ID,
-                                     value=min(MIN_ID + 2372, MAX_ID), step=1)
+            end_q = st.number_input("სად მდე:", min_value=MIN_ID, max_value=MAX_ID,
+                                     value=min(MIN_ID + 19, MAX_ID), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
@@ -1061,7 +1066,7 @@ if current_idx < len(active_indices):
 
     # სწორ პასუხზე: ღილაკები render-ია → მწვანე ჩანს → ვიცდით → გადადის
     if st.session_state.auto_advance_flash:
-        time.sleep(0.7)
+        time.sleep(1.2)
         st.session_state.current_idx       += 1
         st.session_state.has_responded      = False
         st.session_state.user_choice        = None
