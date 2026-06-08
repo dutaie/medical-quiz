@@ -562,26 +562,20 @@ def _file_hash(path: str) -> str:
         return _hashlib.md5(f.read()).hexdigest()
 
 def _combined_hash() -> str:
-    """questions.json + app.py ორივეს hash."""
-    _dir      = os.path.dirname(os.path.abspath(__file__))
-    j = _file_hash(os.path.join(_dir, "questions.json"))
-    a = _file_hash(os.path.join(_dir, "app.py"))
-    return _hashlib.md5((j + a).encode()).hexdigest()
+    """questions.json + app.py ორივეს hash — ნებისმიერი ცვლილება cache-ს ანახლებს."""
+    _dir       = os.path.dirname(os.path.abspath(__file__))
+    json_hash  = _file_hash(os.path.join(_dir, "questions.json"))
+    app_hash   = _file_hash(os.path.join(_dir, "app.py"))
+    combined   = json_hash + app_hash
+    return _hashlib.md5(combined.encode()).hexdigest()
 
-def load_quiz_data() -> list:
+@st.cache_data(show_spinner=False)
+def load_quiz_data(_hash: str = ""):
     """
-    ჩატვირთავს questions.json-ს და ანორმალიზებს.
-    session_state-ში ინახება — ყოველ render-ზე არ გაეშვება,
-    მაგრამ deploy-ს შემდეგ ყოველთვის განახლდება.
+    ჩატვირთავს და ანორმალიზებს questions.json-ს.
+    _hash პარამეტრი უზრუნველყოფს cache invalidation-ს
+    ფაილის შინაარსის შეცვლის შემდეგ.
     """
-    current_hash = _combined_hash()
-
-    # თუ session_state-ში უკვე ჩატვირთულია და hash იგივეა — ვბრუნებთ
-    if (
-        "quiz_data_cache" in st.session_state
-        and st.session_state.get("quiz_data_hash") == current_hash
-    ):
-        return st.session_state["quiz_data_cache"]
     current_dir = os.path.dirname(os.path.abspath(__file__))
     json_path   = os.path.join(current_dir, "questions.json")
 
@@ -609,14 +603,14 @@ def load_quiz_data() -> list:
         try:
             result.append(_normalize_entry(entry, i))
         except Exception:
+            # ერთი ჩანაწერის შეცდომა მთელ ბაზას არ ჩააგდებს
             continue
 
-    # session_state-ში ვინახავთ hash-თან ერთად
-    st.session_state["quiz_data_cache"] = result
-    st.session_state["quiz_data_hash"]  = current_hash
     return result
 
-quiz_data = load_quiz_data()
+_json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "questions.json")
+_fhash     = _combined_hash()
+quiz_data  = load_quiz_data(_fhash)
 
 if not quiz_data:
     st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
@@ -702,8 +696,8 @@ if not st.session_state.quiz_started:
         with col1:
             start_q = st.number_input("საიდან:", min_value=MIN_ID, max_value=MAX_ID, value=MIN_ID, step=1)
         with col2:
-            end_q = st.number_input("სად მდე:", min_value=MIN_ID, max_value=MAX_ID,
-                                     value=min(MIN_ID + 19, MAX_ID), step=1)
+            end_q = st.number_input("სადამდე:", min_value=MIN_ID, max_value=MAX_ID,
+                                     value=min(MIN_ID + 2373, MAX_ID), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
@@ -1095,7 +1089,7 @@ if current_idx < len(active_indices):
 
     # სწორ პასუხზე: ღილაკები render-ია → მწვანე ჩანს → ვიცდით → გადადის
     if st.session_state.auto_advance_flash:
-        time.sleep(1.2)
+        time.sleep(0.7)
         st.session_state.current_idx       += 1
         st.session_state.has_responded      = False
         st.session_state.user_choice        = None
