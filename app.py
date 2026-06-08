@@ -552,12 +552,29 @@ def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
         "explanation": explanation,
     }
 
-@st.cache_data(show_spinner=False, ttl=3600)
-def load_quiz_data(_mtime: float = 0):
+import hashlib as _hashlib
+
+def _file_hash(path: str) -> str:
+    """ფაილის MD5 hash — cache key-ად გამოიყენება."""
+    if not os.path.exists(path):
+        return "nofile"
+    with open(path, "rb") as f:
+        return _hashlib.md5(f.read()).hexdigest()
+
+def _combined_hash() -> str:
+    """questions.json + app.py ორივეს hash — ნებისმიერი ცვლილება cache-ს ანახლებს."""
+    _dir       = os.path.dirname(os.path.abspath(__file__))
+    json_hash  = _file_hash(os.path.join(_dir, "questions.json"))
+    app_hash   = _file_hash(os.path.join(_dir, "app.py"))
+    combined   = json_hash + app_hash
+    return _hashlib.md5(combined.encode()).hexdigest()
+
+@st.cache_data(show_spinner=False)
+def load_quiz_data(_hash: str = ""):
     """
     ჩატვირთავს და ანორმალიზებს questions.json-ს.
-    _mtime პარამეტრი უზრუნველყოფს cache invalidation-ს
-    ფაილის შეცვლის შემდეგ.
+    _hash პარამეტრი უზრუნველყოფს cache invalidation-ს
+    ფაილის შინაარსის შეცვლის შემდეგ.
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     json_path   = os.path.join(current_dir, "questions.json")
@@ -592,8 +609,8 @@ def load_quiz_data(_mtime: float = 0):
     return result
 
 _json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "questions.json")
-_mtime     = os.path.getmtime(_json_path) if os.path.exists(_json_path) else 0
-quiz_data  = load_quiz_data(_mtime)
+_fhash     = _combined_hash()
+quiz_data  = load_quiz_data(_fhash)
 
 if not quiz_data:
     st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
