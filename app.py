@@ -397,7 +397,14 @@ def score_gauge_svg(score):
 
 # ——— კითხვების ჩატვირთვა და ნორმალიზება ———
 
+import unicodedata as _ud
 import re as _re
+
+def _norm(text: str) -> str:
+    """Unicode normalization + whitespace collapse სანდო შედარებისთვის."""
+    t = _ud.normalize("NFC", text)
+    t = _re.sub(r'\s+', ' ', t).strip().lower()
+    return t
 
 def _extract_number_from_question(text: str):
     """
@@ -505,16 +512,16 @@ def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
             correct_idx = LETTER_MAP_KA[s]
 
         else:
-            # 2. პირველ რიგში ვეძებთ options-ში ზუსტი დამთხვევით
-            #    ("1" → "1", "1. 2. 3" → "1. 2. 3" და ა.შ.)
+            # 2. ვეძებთ options-ში normalized ზუსტი შედარებით
             found = False
+            sl_norm = _norm(s)
             for i, opt in enumerate(options):
-                if opt.strip().lower() == sl:
+                if _norm(opt) == sl_norm:
                     correct_idx = i
                     found = True
                     break
 
-            # 3. თუ ტექსტით ვერ იპოვა — მხოლოდ მაშინ ვცდით ინდექსად
+            # 3. თუ ტექსტით ვერ იპოვა — ვცდით ინდექსად
             if not found:
                 try:
                     v = int(s)
@@ -545,15 +552,12 @@ def _normalize_entry(raw: dict, fallback_idx: int) -> dict:
         "explanation": explanation,
     }
 
-@st.cache_data(show_spinner=False)
-def load_quiz_data():
+@st.cache_data(show_spinner=False, ttl=3600)
+def load_quiz_data(_mtime: float = 0):
     """
     ჩატვირთავს და ანორმალიზებს questions.json-ს.
-    მხარს უჭერს:
-      - სია სახის JSON: [{...}, {...}]
-      - ობიექტ სახის JSON: {"questions": [...]}  ან  {"data": [...]}
-      - შერეული ფორმატები (id-ით და id-ის გარეშე ერთად)
-      - 3000+ კითხვა (cache_data უზრუნველყოფს ერთჯერად დამუშავებას)
+    _mtime პარამეტრი უზრუნველყოფს cache invalidation-ს
+    ფაილის შეცვლის შემდეგ.
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     json_path   = os.path.join(current_dir, "questions.json")
@@ -587,7 +591,9 @@ def load_quiz_data():
 
     return result
 
-quiz_data = load_quiz_data()
+_json_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "questions.json")
+_mtime     = os.path.getmtime(_json_path) if os.path.exists(_json_path) else 0
+quiz_data  = load_quiz_data(_mtime)
 
 if not quiz_data:
     st.error("ვერ მოიძებნა 'questions.json' ფაილი ან ის ცარიელია!")
@@ -673,8 +679,8 @@ if not st.session_state.quiz_started:
         with col1:
             start_q = st.number_input("საიდან:", min_value=MIN_ID, max_value=MAX_ID, value=MIN_ID, step=1)
         with col2:
-            end_q = st.number_input("სადამდე:", min_value=MIN_ID, max_value=MAX_ID,
-                                     value=min(MIN_ID + 2372, MAX_ID), step=1)
+            end_q = st.number_input("სად მდე:", min_value=MIN_ID, max_value=MAX_ID,
+                                     value=min(MIN_ID + 19, MAX_ID), step=1)
 
         shuffle_on = st.checkbox("🔀 კითხვები და ვარიანტები შეირიოს", value=True)
 
@@ -1066,7 +1072,7 @@ if current_idx < len(active_indices):
 
     # სწორ პასუხზე: ღილაკები render-ია → მწვანე ჩანს → ვიცდით → გადადის
     if st.session_state.auto_advance_flash:
-        time.sleep(0.7)
+        time.sleep(1.2)
         st.session_state.current_idx       += 1
         st.session_state.has_responded      = False
         st.session_state.user_choice        = None
